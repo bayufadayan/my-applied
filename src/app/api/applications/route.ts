@@ -42,11 +42,17 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    // Convert appliedDate string to Date object
+    const applicationData = {
+      ...body,
+      appliedDate: body.appliedDate ? new Date(body.appliedDate) : new Date(),
+    };
+
     const application = await db
       .insert(jobApplications)
       .values({
         userId: session.user.id,
-        ...body,
+        ...applicationData,
       })
       .returning();
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+import { ApplicationDetail } from "./application-detail";
 
 interface Platform {
   id: string;
@@ -50,12 +51,40 @@ const statusLabels = {
   none: "None",
 };
 
+function formatSalary(amount: number): string {
+  if (amount >= 1000000) {
+    const jt = amount / 1000000;
+    return jt % 1 === 0 ? `${jt}jt` : `${jt.toFixed(1)}jt`;
+  } else if (amount >= 1000) {
+    const rb = amount / 1000;
+    return rb % 1 === 0 ? `${rb}rb` : `${rb.toFixed(1)}rb`;
+  }
+  return `${amount}`;
+}
+
+function formatDate(date: Date): string {
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  
+  const d = new Date(date);
+  const dayName = days[d.getDay()];
+  const day = d.getDate();
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  
+  return `${dayName}, ${day} ${month} ${year}`;
+}
+
 export function ApplicationsList() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
   const [deletingApp, setDeletingApp] = useState<JobApplication | null>(null);
+  const [viewingApp, setViewingApp] = useState<JobApplication | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -189,9 +218,7 @@ export function ApplicationsList() {
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <span>📅</span>
-                  <span>
-                    {new Date(app.appliedDate).toLocaleDateString("id-ID")}
-                  </span>
+                  <span>{formatDate(app.appliedDate)}</span>
                 </div>
                 {app.platform && (
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -212,25 +239,43 @@ export function ApplicationsList() {
                     <span>💰</span>
                     <span>
                       {app.salaryMin && app.salaryMax
-                        ? `Rp ${app.salaryMin.toLocaleString()} - ${app.salaryMax.toLocaleString()}`
+                        ? `${formatSalary(app.salaryMin)} - ${formatSalary(app.salaryMax)}`
                         : app.salaryMin
-                        ? `Rp ${app.salaryMin.toLocaleString()}+`
-                        : `Up to Rp ${app.salaryMax?.toLocaleString()}`}
+                        ? `${formatSalary(app.salaryMin)}+`
+                        : `Up to ${formatSalary(app.salaryMax!)}`}
                     </span>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setViewingApp(app)}
+                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors font-medium"
+                >
+                  <Eye className="w-4 h-4" />
+                  Detail
+                </button>
+                {app.cvLink && (
+                  <a
+                    href={app.cvLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title="Lihat CV"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
                 {app.jobLink && (
                   <a
                     href={app.jobLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Lihat Lowongan"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Job Link
                   </a>
                 )}
                 <button
@@ -267,6 +312,14 @@ export function ApplicationsList() {
             setEditingApp(null);
             fetchApplications();
           }}
+        />
+      )}
+
+      {/* Detail Modal */}
+      {viewingApp && (
+        <ApplicationDetail
+          application={viewingApp}
+          onClose={() => setViewingApp(null)}
         />
       )}
 

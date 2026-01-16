@@ -60,12 +60,16 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
 
+    // Convert appliedDate string to Date object if present
+    const updateData = {
+      ...body,
+      appliedDate: body.appliedDate ? new Date(body.appliedDate) : undefined,
+      updatedAt: new Date(),
+    };
+
     const updatedApp = await db
       .update(jobApplications)
-      .set({
-        ...body,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(
         and(
           eq(jobApplications.id, id),
