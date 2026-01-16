@@ -24,6 +24,8 @@ interface JobApplication {
   currentStage: string;
   cvLink: string | null;
   jobLink: string | null;
+  location: string | null;
+  locationMapLink: string | null;
   notes: string | null;
 }
 
@@ -57,6 +59,8 @@ export function ApplicationForm({
     currentStage: application?.currentStage || "none",
     cvLink: application?.cvLink || "",
     jobLink: application?.jobLink || "",
+    location: application?.location || "",
+    locationMapLink: application?.locationMapLink || "",
     notes: application?.notes || "",
   });
 
@@ -341,6 +345,39 @@ export function ApplicationForm({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
                 placeholder="https://drive.google.com/..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Lokasi
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
+                placeholder="Jakarta Barat, Bogor, dll"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Link Google Maps (Opsional)
+              </label>
+              <input
+                type="url"
+                value={formData.locationMapLink}
+                onChange={(e) =>
+                  setFormData({ ...formData, locationMapLink: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
+                placeholder="https://maps.google.com/... atau https://goo.gl/maps/..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                💡 Tip: Buka Google Maps, cari lokasi kantor, klik Share → Copy link
+              </p>
             </div>
 
             <div className="md:col-span-2">

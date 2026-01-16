@@ -131,6 +131,10 @@ export const jobApplications = pgTable("job_applications", {
   cvLink: text("cv_link"),
   jobLink: text("job_link"),
 
+  // Location
+  location: varchar("location", { length: 255 }),
+  locationMapLink: text("location_map_link"),
+
   // Notes
   notes: text("notes"),
 

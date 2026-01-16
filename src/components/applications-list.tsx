@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ExternalLink, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -27,6 +27,8 @@ interface JobApplication {
   currentStage: string;
   cvLink: string | null;
   jobLink: string | null;
+  location: string | null;
+  locationMapLink: string | null;
   notes: string | null;
   platform?: Platform | null;
 }
@@ -246,6 +248,12 @@ export function ApplicationsList() {
                     </span>
                   </div>
                 )}
+                {app.location && (
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <MapPin className="w-4 h-4" />
+                    <span>{app.location}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -256,6 +264,17 @@ export function ApplicationsList() {
                   <Eye className="w-4 h-4" />
                   Detail
                 </button>
+                {app.locationMapLink && (
+                  <a
+                    href={app.locationMapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+                    title="Buka di Google Maps"
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </a>
+                )}
                 {app.cvLink && (
                   <a
                     href={app.cvLink}

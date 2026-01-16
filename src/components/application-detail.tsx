@@ -23,6 +23,8 @@ interface JobApplication {
   currentStage: string;
   cvLink: string | null;
   jobLink: string | null;
+  location: string | null;
+  locationMapLink: string | null;
   notes: string | null;
   platform?: Platform | null;
 }
@@ -195,6 +197,31 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
                   <p className="font-medium text-gray-900 dark:text-white mt-1">
                     {application.hrContact}
                   </p>
+                </div>
+              </div>
+            )}
+
+            {application.location && (
+              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg md:col-span-2">
+                <MapPin className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Lokasi</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {application.location}
+                    </p>
+                    {application.locationMapLink && (
+                      <a
+                        href={application.locationMapLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400 hover:underline"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Buka Maps
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
