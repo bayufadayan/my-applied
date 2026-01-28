@@ -31,6 +31,7 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "reject",
   "offer",
   "closed",
+  "unresponded",
   "none",
 ]);
 
@@ -39,6 +40,7 @@ export const stageEnum = pgEnum("stage", [
   "hr_interview",
   "user_interview",
   "technical_test",
+  "psikotes",
   "final_interview",
   "offering",
   "rejected",

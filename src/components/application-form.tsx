@@ -33,12 +33,14 @@ interface ApplicationFormProps {
   application?: JobApplication | null;
   onClose: () => void;
   onSuccess: () => void;
+  isDuplicate?: boolean;
 }
 
 export function ApplicationForm({
   application,
   onClose,
   onSuccess,
+  isDuplicate = false,
 }: ApplicationFormProps) {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,10 +101,10 @@ export function ApplicationForm({
         notes: formData.notes || null,
       };
 
-      const url = application
+      const url = application && !isDuplicate
         ? `/api/applications/${application.id}`
         : "/api/applications";
-      const method = application ? "PUT" : "POST";
+      const method = application && !isDuplicate ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
@@ -124,9 +126,16 @@ export function ApplicationForm({
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {application ? "Edit Lamaran" : "Tambah Lamaran Baru"}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {isDuplicate ? "Duplikasi Lamaran" : application ? "Edit Lamaran" : "Tambah Lamaran Baru"}
+            </h2>
+            {isDuplicate && (
+              <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
+                📋 Duplicate Mode
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -289,6 +298,7 @@ export function ApplicationForm({
                 <option value="reject">Reject</option>
                 <option value="offer">Offer</option>
                 <option value="closed">Closed</option>
+                <option value="unresponded">Unresponded</option>
                 <option value="none">None</option>
               </select>
             </div>
@@ -310,6 +320,7 @@ export function ApplicationForm({
                 <option value="hr_interview">HR Interview</option>
                 <option value="user_interview">User Interview</option>
                 <option value="technical_test">Technical Test</option>
+                <option value="psikotes">Psikotes</option>
                 <option value="final_interview">Final Interview</option>
                 <option value="offering">Offering</option>
                 <option value="rejected">Rejected</option>

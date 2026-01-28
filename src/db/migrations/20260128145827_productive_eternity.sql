@@ -1,0 +1,1 @@
+ALTER TYPE "public"."stage" ADD VALUE 'psikotes' BEFORE 'final_interview';
