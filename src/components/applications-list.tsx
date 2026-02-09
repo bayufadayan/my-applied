@@ -632,7 +632,7 @@ export function ApplicationsList() {
             } else if (app.status === "unresponded") {
               cardClassName = "relative bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
             } else if (app.status === "closed") {
-              cardClassName = "relative bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-75";
+              cardClassName = "relative bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
             }
 
             return (
