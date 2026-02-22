@@ -1,6 +1,7 @@
 "use client";
 
-import { TrendingUp, FileText, MessageSquare, ClipboardCheck, Gift, XCircle, BellOff, Archive } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, FileText, MessageSquare, ClipboardCheck, Gift, XCircle, BellOff, Archive, ChevronDown, ChevronUp } from "lucide-react";
 
 interface JobApplication {
     id: string;
@@ -13,17 +14,58 @@ interface DashboardStatsProps {
 }
 
 const statusConfig = {
-    applied: { label: "Applied", icon: FileText, color: "blue", darkColor: "blue" },
-    interview: { label: "Interview", icon: MessageSquare, color: "purple", darkColor: "purple" },
-    test: { label: "Test", icon: ClipboardCheck, color: "yellow", darkColor: "yellow" },
-    offer: { label: "Offer", icon: Gift, color: "green", darkColor: "green" },
-    reject: { label: "Rejected", icon: XCircle, color: "red", darkColor: "red" },
-    unresponded: { label: "Unresponded", icon: BellOff, color: "orange", darkColor: "orange" },
-    closed: { label: "Closed", icon: Archive, color: "gray", darkColor: "gray" },
-    none: { label: "None", icon: FileText, color: "gray", darkColor: "gray" },
+    applied: { 
+        label: "Applied", 
+        icon: FileText, 
+        color: "rgb(37, 99, 235)", // blue-600
+        iconColor: "text-blue-600 dark:text-blue-400" 
+    },
+    interview: { 
+        label: "Interview", 
+        icon: MessageSquare, 
+        color: "rgb(147, 51, 234)", // purple-600
+        iconColor: "text-purple-600 dark:text-purple-400" 
+    },
+    test: { 
+        label: "Test", 
+        icon: ClipboardCheck, 
+        color: "rgb(202, 138, 4)", // yellow-600
+        iconColor: "text-yellow-600 dark:text-yellow-400" 
+    },
+    offer: { 
+        label: "Offer", 
+        icon: Gift, 
+        color: "rgb(22, 163, 74)", // green-600
+        iconColor: "text-green-600 dark:text-green-400" 
+    },
+    reject: { 
+        label: "Rejected", 
+        icon: XCircle, 
+        color: "rgb(220, 38, 38)", // red-600
+        iconColor: "text-red-600 dark:text-red-400" 
+    },
+    unresponded: { 
+        label: "Unresponded", 
+        icon: BellOff, 
+        color: "rgb(234, 88, 12)", // orange-600
+        iconColor: "text-orange-600 dark:text-orange-400" 
+    },
+    closed: { 
+        label: "Closed", 
+        icon: Archive, 
+        color: "rgb(75, 85, 99)", // gray-600
+        iconColor: "text-gray-600 dark:text-gray-400" 
+    },
+    none: { 
+        label: "None", 
+        icon: FileText, 
+        color: "rgb(75, 85, 99)", // gray-600
+        iconColor: "text-gray-600 dark:text-gray-400" 
+    },
 };
 
 export function DashboardStats({ applications }: DashboardStatsProps) {
+    const [isStatusCollapsed, setIsStatusCollapsed] = useState(false);
     const total = applications.length;
 
     // Count by status
@@ -100,12 +142,24 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
 
             {/* Status Breakdown */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Status Distribution
-                </h3>
+                <button
+                    onClick={() => setIsStatusCollapsed(!isStatusCollapsed)}
+                    className="w-full flex items-center justify-between mb-4 hover:opacity-80 transition-opacity"
+                >
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Status Distribution
+                    </h3>
+                    {isStatusCollapsed ? (
+                        <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    ) : (
+                        <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    )}
+                </button>
 
-                {/* Progress Bars */}
-                <div className="space-y-4">
+                {!isStatusCollapsed && (
+                    <>
+                        {/* Progress Bars */}
+                        <div className="space-y-4">
                     {Object.entries(stats).map(([status, count]) => {
                         if (count === 0) return null;
                         const config = statusConfig[status as keyof typeof statusConfig];
@@ -116,7 +170,7 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
                             <div key={status}>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <Icon className={`w-4 h-4 text-${config.color}-600 dark:text-${config.darkColor}-400`} />
+                                        <Icon className={`w-4 h-4 ${config.iconColor}`} />
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                             {config.label}
                                         </span>
@@ -127,66 +181,36 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
                                 </div>
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
                                     <div
-                                        className={`bg-${config.color}-600 dark:bg-${config.darkColor}-500 h-2.5 rounded-full transition-all duration-500`}
-                                        style={{ width: `${percentage}%` }}
+                                        className="h-2.5 rounded-full transition-all duration-500"
+                                        style={{ 
+                                            width: `${percentage}%`,
+                                            backgroundColor: config.color
+                                        }}
                                     ></div>
                                 </div>
                             </div>
                         );
                     })}
-                </div>
+                        </div>
 
-                {/* Summary Stats */}
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{activeApplications}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Active Process</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{positiveOutcomes}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Offers Received</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{negativeOutcomes}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Closed/Rejected</p>
-                    </div>
-                </div>
+                        {/* Summary Stats */}
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4">
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{activeApplications}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Active Process</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{positiveOutcomes}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Offers Received</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{negativeOutcomes}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Closed/Rejected</p>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
-
-            {/* Quick Insights */}
-            {total > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <p className="text-sm text-blue-800 dark:text-blue-300">
-                            💡 <span className="font-semibold">Insight:</span> Dari {total} lamaran, {stats.interview + stats.test + stats.offer} ({interviewRate}%) mencapai tahap interview atau lebih.
-                        </p>
-                    </div>
-
-                    {stats.unresponded > 0 && (
-                        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-                            <p className="text-sm text-orange-800 dark:text-orange-300">
-                                ⚠️ <span className="font-semibold">Perhatian:</span> {stats.unresponded} lamaran belum mendapat respons (lebih dari 35 hari).
-                            </p>
-                        </div>
-                    )}
-
-                    {positiveOutcomes > 0 && (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                            <p className="text-sm text-green-800 dark:text-green-300">
-                                🎉 <span className="font-semibold">Congratulations!</span> Anda sudah mendapat {positiveOutcomes} tawaran kerja!
-                            </p>
-                        </div>
-                    )}
-
-                    {activeApplications > 0 && (
-                        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                            <p className="text-sm text-purple-800 dark:text-purple-300">
-                                🔄 <span className="font-semibold">In Progress:</span> {activeApplications} lamaran masih dalam proses. Tetap semangat!
-                            </p>
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

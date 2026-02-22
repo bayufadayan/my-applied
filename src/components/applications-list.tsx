@@ -597,6 +597,8 @@ export function ApplicationsList() {
           { value: "offer", label: "Offer" },
           { value: "reject", label: "Rejected" },
           { value: "unresponded", label: "Unresponded" },
+          { value: "closed", label: "Closed" },
+          { value: "none", label: "None" },
         ].map((tab) => (
           <button
             key={tab.value}
@@ -627,7 +629,13 @@ export function ApplicationsList() {
             // Different card styles based on status
             let cardClassName = "relative bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
             
-            if (app.status === "reject") {
+            if (app.status === "applied") {
+              cardClassName = "relative bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+            } else if (app.status === "offer") {
+              cardClassName = "relative bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+            } else if (app.status === "none") {
+              cardClassName = "relative bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+            } else if (app.status === "reject") {
               cardClassName = "relative bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
             } else if (app.status === "unresponded") {
               cardClassName = "relative bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
@@ -647,28 +655,56 @@ export function ApplicationsList() {
                     e.stopPropagation();
                     toggleSelect(app.id);
                   }}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className={`p-1 rounded transition-colors ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "hover:bg-white/20"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
                 >
                   {selectedIds.includes(app.id) ? (
-                    <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <CheckSquare className={`w-5 h-5 ${
+                      app.status === "applied"
+                        ? "text-white"
+                        : app.status === "offer"
+                        ? "text-white"
+                        : "text-blue-600 dark:text-blue-400"
+                    }`} />
                   ) : (
-                    <Square className="w-5 h-5 text-gray-400" />
+                    <Square className={`w-5 h-5 ${
+                      app.status === "applied"
+                        ? "text-blue-100"
+                        : app.status === "offer"
+                        ? "text-green-100"
+                        : "text-gray-400"
+                    }`} />
                   )}
                 </button>
               </div>
 
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
+                  <h3 className={`font-semibold text-lg mb-1 ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white" 
+                      : "text-gray-900 dark:text-white"
+                  }`}>
                     {app.position}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className={`text-sm ${
+                    app.status === "applied"
+                      ? "text-blue-50"
+                      : app.status === "offer"
+                      ? "text-green-50"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}>
                     {app.companyName || "Perusahaan tidak disebutkan"}
                   </p>
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    statusColors[app.status as keyof typeof statusColors]
+                    app.status === "applied" || app.status === "offer"
+                      ? "bg-white/20 text-white backdrop-blur-sm"
+                      : statusColors[app.status as keyof typeof statusColors]
                   }`}
                 >
                   {statusLabels[app.status as keyof typeof statusLabels]}
@@ -676,17 +712,35 @@ export function ApplicationsList() {
               </div>
 
               <div className="space-y-2 text-sm mb-4">
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <div className={`flex items-center gap-2 ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
                   <span>📅</span>
                   <span>{formatDate(app.appliedDate)}</span>
                 </div>
                 {app.platform && (
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <div className={`flex items-center gap-2 ${
+                    app.status === "applied"
+                      ? "text-blue-50"
+                      : app.status === "offer"
+                      ? "text-green-50"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}>
                     <span>🌐</span>
                     <span>{app.platform.name}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <div className={`flex items-center gap-2 ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
                   <span>💼</span>
                   <span className="capitalize">
                     {app.jobType.replace("_", " ")}
@@ -695,7 +749,13 @@ export function ApplicationsList() {
                   <span className="capitalize">{app.workPolicy}</span>
                 </div>
                 {(app.salaryMin || app.salaryMax) && (
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <div className={`flex items-center gap-2 ${
+                    app.status === "applied"
+                      ? "text-blue-50"
+                      : app.status === "offer"
+                      ? "text-green-50"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}>
                     <span>💰</span>
                     <span>
                       {app.salaryMin && app.salaryMax
@@ -707,24 +767,44 @@ export function ApplicationsList() {
                   </div>
                 )}
                 {app.location && (
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <div className={`flex items-center gap-2 ${
+                    app.status === "applied"
+                      ? "text-blue-50"
+                      : app.status === "offer"
+                      ? "text-green-50"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}>
                     <MapPin className="w-4 h-4" />
                     <span>{app.location}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className={`flex items-center gap-2 pt-4 border-t ${
+                app.status === "applied"
+                  ? "border-blue-400/30"
+                  : app.status === "offer"
+                  ? "border-green-400/30"
+                  : "border-gray-200 dark:border-gray-700"
+              }`}>
                 <button
                   onClick={() => setViewingApp(app)}
-                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors font-medium"
+                  className={`flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                      : "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                  }`}
                 >
                   <Eye className="w-4 h-4" />
                   Detail
                 </button>
                 <button
                   onClick={() => handleDuplicate(app)}
-                  className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                  className={`p-2 rounded-lg transition-colors ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                      : "text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                  }`}
                   title="Duplikasi Lamaran"
                 >
                   <Copy className="w-4 h-4" />
@@ -734,7 +814,11 @@ export function ApplicationsList() {
                     href={app.locationMapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      app.status === "applied" || app.status === "offer"
+                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                        : "text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                    }`}
                     title="Buka di Google Maps"
                   >
                     <MapPin className="w-4 h-4" />
@@ -745,7 +829,11 @@ export function ApplicationsList() {
                     href={app.cvLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      app.status === "applied" || app.status === "offer"
+                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                        : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    }`}
                     title="Lihat CV"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -756,7 +844,11 @@ export function ApplicationsList() {
                     href={app.jobLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      app.status === "applied" || app.status === "offer"
+                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                        : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    }`}
                     title="Lihat Lowongan"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -767,13 +859,21 @@ export function ApplicationsList() {
                     setEditingApp(app);
                     setShowForm(true);
                   }}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className={`p-2 rounded-lg transition-colors ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setDeletingApp(app)}
-                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  className={`p-2 rounded-lg transition-colors ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white hover:bg-red-500/30 backdrop-blur-sm"
+                      : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  }`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
