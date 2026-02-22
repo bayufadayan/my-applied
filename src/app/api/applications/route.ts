@@ -113,6 +113,7 @@ export async function POST(req: Request) {
     const applicationData = {
       ...body,
       appliedDate: body.appliedDate ? new Date(body.appliedDate) : new Date(),
+      deadline: body.deadline ? new Date(body.deadline) : null,
     };
 
     const application = await db

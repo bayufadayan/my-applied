@@ -64,6 +64,7 @@ export async function PUT(
     const updateData = {
       ...body,
       appliedDate: body.appliedDate ? new Date(body.appliedDate) : undefined,
+      deadline: body.deadline !== undefined ? (body.deadline ? new Date(body.deadline) : null) : undefined,
       updatedAt: new Date(),
     };
 

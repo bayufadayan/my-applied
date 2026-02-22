@@ -1,6 +1,8 @@
 "use client";
 
-import { X, ExternalLink, Calendar, Building2, Briefcase, DollarSign, MapPin, User, FileText, StickyNote } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { X, ExternalLink, Calendar, Building2, Briefcase, DollarSign, MapPin, User, FileText, StickyNote, Eye } from "lucide-react";
 
 interface Platform {
   id: string;
@@ -17,6 +19,7 @@ interface JobApplication {
   salaryMax: number | null;
   jobDescription: string | null;
   appliedDate: Date;
+  deadline: Date | null;
   platformId: string | null;
   hrContact: string | null;
   status: string;
@@ -94,6 +97,16 @@ function formatDate(date: Date): string {
 }
 
 export function ApplicationDetail({ application, onClose }: ApplicationDetailProps) {
+  const router = useRouter();
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
@@ -142,6 +155,51 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
                 </p>
               </div>
             </div>
+
+            {application.deadline && (() => {
+              const now = new Date();
+              const deadlineDate = new Date(application.deadline);
+              const diffTime = deadlineDate.getTime() - now.getTime();
+              const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
+              let bgColor = "bg-blue-50 dark:bg-blue-900/20";
+              let textColor = "text-blue-600 dark:text-blue-400";
+              let borderColor = "border-blue-200 dark:border-blue-800";
+              let icon = "📅";
+              
+              if (daysLeft < 0) {
+                bgColor = "bg-red-50 dark:bg-red-900/20";
+                textColor = "text-red-600 dark:text-red-400";
+                borderColor = "border-red-200 dark:border-red-800";
+                icon = "🔴";
+              } else if (daysLeft <= 3) {
+                bgColor = "bg-orange-50 dark:bg-orange-900/20";
+                textColor = "text-orange-600 dark:text-orange-400";
+                borderColor = "border-orange-200 dark:border-orange-800";
+                icon = "⚠️";
+              }
+              
+              return (
+                <div className={`flex items-start gap-3 p-4 ${bgColor} rounded-lg border-2 ${borderColor}`}>
+                  <span className="text-xl mt-0.5">{icon}</span>
+                  <div className="flex-1">
+                    <p className={`text-sm ${textColor} font-medium`}>Deadline</p>
+                    <p className={`font-bold ${textColor} mt-1`}>
+                      {formatDate(application.deadline)}
+                    </p>
+                    <p className={`text-xs ${textColor} mt-1`}>
+                      {daysLeft < 0 
+                        ? `Lewat ${Math.abs(daysLeft)} hari` 
+                        : daysLeft === 0 
+                        ? "Hari ini!" 
+                        : daysLeft === 1
+                        ? "Besok"
+                        : `${daysLeft} hari lagi`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {application.platform && (
               <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
@@ -265,6 +323,16 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
 
           {/* Links */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => {
+                onClose();
+                router.push(`/dashboard/application/${application.id}`);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium"
+            >
+              <Eye className="w-4 h-4" />
+              Lihat Detail Lengkap
+            </button>
             {application.cvLink && (
               <a
                 href={application.cvLink}

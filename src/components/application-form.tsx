@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, Check, Zap } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check, Zap, Loader2 } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -20,6 +20,7 @@ interface JobApplication {
   salaryMax: number | null;
   jobDescription: string | null;
   appliedDate: Date;
+  deadline: Date | null;
   platformId: string | null;
   hrContact: string | null;
   status: string;
@@ -45,11 +46,12 @@ export function ApplicationForm({
   isDuplicate = false,
 }: ApplicationFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 5;
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(false);
   const [customPlatformName, setCustomPlatformName] = useState("");
   const [isQuickAddMode, setIsQuickAddMode] = useState(false);
+  const [includeDeadline, setIncludeDeadline] = useState(!!application?.deadline);
   const [formData, setFormData] = useState({
     companyName: application?.companyName || "",
     position: application?.position || "",
@@ -59,6 +61,7 @@ export function ApplicationForm({
     salaryMax: application?.salaryMax?.toString() || "",
     jobDescription: application?.jobDescription || "",
     appliedDate: application?.appliedDate ? new Date(application.appliedDate) : new Date(),
+    deadline: application?.deadline ? new Date(application.deadline) : new Date(),
     platformId: application?.platformId || "",
     hrContact: application?.hrContact || "",
     status: application?.status || "applied",
@@ -94,6 +97,14 @@ export function ApplicationForm({
     "Business Analyst",
   ];
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   useEffect(() => {
     fetchPlatforms();
   }, []);
@@ -113,8 +124,8 @@ export function ApplicationForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
-    // Only submit when on final step
-    if (currentStep < totalSteps) {
+    // Only submit when on final step (skip this check in Quick Add Mode)
+    if (!isQuickAddMode && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       return;
     }
@@ -143,6 +154,7 @@ export function ApplicationForm({
         salaryMin: formData.salaryMin ? parseInt(formData.salaryMin.replace(/\D/g, "")) : null,
         salaryMax: formData.salaryMax ? parseInt(formData.salaryMax.replace(/\D/g, "")) : null,
         appliedDate: formData.appliedDate,
+        deadline: includeDeadline ? formData.deadline : null,
         platformId: finalPlatformId === "other" ? null : finalPlatformId || null,
         companyName: formData.companyName || null,
         jobDescription: formData.jobDescription || null,
@@ -183,8 +195,9 @@ export function ApplicationForm({
   const steps = [
     { number: 1, label: "Info Dasar" },
     { number: 2, label: "Detail Pekerjaan" },
-    { number: 3, label: "Link & Dokumen" },
-    { number: 4, label: "Status & Catatan" },
+    { number: 3, label: "Desc & Catatan" },
+    { number: 4, label: "Link & Dokumen" },
+    { number: 5, label: "Status & Tahapan" },
   ];
 
   const goToNextStep = () => {
@@ -276,9 +289,9 @@ export function ApplicationForm({
             </p>
             <div className="flex items-center justify-between max-w-xl mx-auto">
             {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center flex-1">
+              <div key={step.number} className="flex items-center" style={{ flex: '1 1 0' }}>
                 {/* Step Circle */}
-                <div className="flex flex-col items-center flex-1">
+                <div className="flex flex-col items-center" style={{ width: '80px' }}>
                   <button
                     type="button"
                     onClick={() => setCurrentStep(step.number)}
@@ -300,11 +313,12 @@ export function ApplicationForm({
                   <button
                     type="button"
                     onClick={() => setCurrentStep(step.number)}
-                    className={`mt-2 text-xs font-medium text-center transition-colors hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer ${
+                    className={`mt-2 text-xs font-medium text-center transition-colors hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer leading-tight ${
                       currentStep >= step.number
                         ? "text-gray-900 dark:text-white"
                         : "text-gray-500 dark:text-gray-400"
                     }`}
+                    style={{ width: '80px' }}
                   >
                     {step.label}
                   </button>
@@ -312,7 +326,7 @@ export function ApplicationForm({
 
                 {/* Connector Line */}
                 {index < steps.length - 1 && (
-                  <div className="flex-1 h-1 mx-2 -mt-8">
+                  <div className="flex-1 h-1 mx-2 -mt-8 min-w-5">
                     <div
                       className={`h-full rounded transition-all duration-300 ${
                         currentStep > step.number
@@ -568,6 +582,48 @@ export function ApplicationForm({
                         📅 Pilih tanggal ketika Anda melamar
                       </p>
                     </div>
+
+                    {/* Checkbox untuk Deadline */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="includeDeadline"
+                        checked={includeDeadline}
+                        onChange={(e) => setIncludeDeadline(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor="includeDeadline"
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                      >
+                        Sertakan deadline
+                      </label>
+                    </div>
+
+                    {/* Field Deadline - Conditional */}
+                    {includeDeadline && (
+                      <div className="animate-fadeIn">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Deadline Lamaran
+                        </label>
+                        <DatePicker
+                          selected={formData.deadline}
+                          onChange={(date: Date | null) =>
+                            setFormData({ ...formData, deadline: date || new Date() })
+                          }
+                          dateFormat="dd/MM/yyyy"
+                          minDate={formData.appliedDate}
+                          showYearDropdown
+                          showMonthDropdown
+                          dropdownMode="select"
+                          placeholderText="Pilih tanggal deadline..."
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          ⏰ Tanggal terakhir untuk melamar atau merespon
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -750,8 +806,77 @@ export function ApplicationForm({
               </div>
             )}
 
-            {/* Step 3: Links & Documents */}
+            {/* Step 3: Description & Notes */}
             {currentStep === 3 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    💡 <strong>Tips:</strong> Ruang ini lebih luas untuk Anda menulis Job Description dan Catatan dengan lebih leluasa.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Job Description
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={formData.jobDescription}
+                      onChange={(e) =>
+                        setFormData({ ...formData, jobDescription: e.target.value })
+                      }
+                      rows={10}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none resize-y"
+                      placeholder="Tulis deskripsi pekerjaan secara lengkap...&#10;&#10;Contoh:&#10;- Tanggung jawab utama&#10;- Requirement yang dibutuhkan&#10;- Benefit yang ditawarkan&#10;- Tech stack yang digunakan"
+                    />
+                    {formData.jobDescription && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, jobDescription: "" })}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {formData.jobDescription.length} karakter
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Catatan Pribadi
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
+                      rows={10}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none resize-y"
+                      placeholder="Tulis catatan pribadi Anda...&#10;&#10;Contoh:&#10;- Kesan setelah interview&#10;- Hal yang perlu dipersiapkan&#10;- Kontak person atau referensi&#10;- Informasi penting lainnya"
+                    />
+                    {formData.notes && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, notes: "" })}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {formData.notes.length} karakter
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Links & Documents */}
+            {currentStep === 4 && (
               <div className="space-y-4 animate-fadeIn">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -836,8 +961,8 @@ export function ApplicationForm({
               </div>
             )}
 
-            {/* Step 4: Status & Notes */}
-            {currentStep === 4 && (
+            {/* Step 5: Status & Stage */}
+            {currentStep === 5 && (
               <div className="space-y-4 animate-fadeIn">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -899,65 +1024,13 @@ export function ApplicationForm({
                         setFormData({ ...formData, hrContact: e.target.value })
                       }
                       className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
-                      placeholder="hr@company.com"
+                      placeholder="hr@company.com atau nomor WhatsApp"
                     />
                     {formData.hrContact && (
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, hrContact: "" })}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Job Description
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      value={formData.jobDescription}
-                      onChange={(e) =>
-                        setFormData({ ...formData, jobDescription: e.target.value })
-                      }
-                      rows={3}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none resize-none"
-                      placeholder="Deskripsi pekerjaan..."
-                    />
-                    {formData.jobDescription && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, jobDescription: "" })}
-                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Catatan
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                      rows={3}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none resize-none"
-                      placeholder="Catatan tambahan..."
-                    />
-                    {formData.notes && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, notes: "" })}
-                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -985,8 +1058,9 @@ export function ApplicationForm({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {loading ? "Menyimpan..." : "Simpan Cepat"}
                 </button>
               </>
@@ -1027,8 +1101,9 @@ export function ApplicationForm({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                     {loading ? "Menyimpan..." : application ? "Update" : "Simpan"}
                   </button>
                 )}

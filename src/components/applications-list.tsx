@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2 } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -22,6 +23,7 @@ export interface JobApplication {
   salaryMax: number | null;
   jobDescription: string | null;
   appliedDate: Date;
+  deadline: Date | null;
   platformId: string | null;
   hrContact: string | null;
   status: string;
@@ -96,7 +98,76 @@ function formatDate(date: Date): string {
   return `${dayName}, ${day} ${month} ${year}`;
 }
 
+function getDaysUntilDeadline(deadline: Date): number {
+  const now = new Date();
+  const deadlineDate = new Date(deadline);
+  const diffTime = deadlineDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+function getDeadlineInfo(deadline: Date) {
+  const daysLeft = getDaysUntilDeadline(deadline);
+  
+  if (daysLeft < 0) {
+    return {
+      text: `Lewat ${Math.abs(daysLeft)} hari`,
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-900/20",
+      borderColor: "border-red-300 dark:border-red-800",
+      icon: "🔴",
+      urgent: true
+    };
+  } else if (daysLeft === 0) {
+    return {
+      text: "Hari ini!",
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-900/20",
+      borderColor: "border-red-300 dark:border-red-800",
+      icon: "🔴",
+      urgent: true
+    };
+  } else if (daysLeft === 1) {
+    return {
+      text: "Besok",
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-50 dark:bg-orange-900/20",
+      borderColor: "border-orange-300 dark:border-orange-800",
+      icon: "⚠️",
+      urgent: true
+    };
+  } else if (daysLeft <= 3) {
+    return {
+      text: `${daysLeft} hari lagi`,
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-50 dark:bg-orange-900/20",
+      borderColor: "border-orange-300 dark:border-orange-800",
+      icon: "⚠️",
+      urgent: true
+    };
+  } else if (daysLeft <= 7) {
+    return {
+      text: `${daysLeft} hari lagi`,
+      color: "text-yellow-600 dark:text-yellow-400",
+      bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+      borderColor: "border-yellow-300 dark:border-yellow-800",
+      icon: "⏰",
+      urgent: false
+    };
+  } else {
+    return {
+      text: `${daysLeft} hari lagi`,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-900/20",
+      borderColor: "border-blue-300 dark:border-blue-800",
+      icon: "📅",
+      urgent: false
+    };
+  }
+}
+
 export function ApplicationsList() {
+  const router = useRouter();
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -112,9 +183,13 @@ export function ApplicationsList() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     fetchApplications();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
 
   // Keyboard shortcut for quick add (Ctrl+N or Cmd+N)
@@ -204,8 +279,13 @@ export function ApplicationsList() {
       return;
     }
 
-    // CSV Headers
-    const headers = [
+    setExportLoading(true);
+    
+    // Use setTimeout to allow UI to update
+    setTimeout(() => {
+      try {
+        // CSV Headers
+        const headers = [
       "No",
       "Perusahaan",
       "Posisi",
@@ -275,6 +355,10 @@ export function ApplicationsList() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+      } finally {
+        setExportLoading(false);
+      }
+    }, 100);
   }
 
   // Bulk selection functions
@@ -298,6 +382,7 @@ export function ApplicationsList() {
     const confirmMsg = `Yakin ingin menghapus ${selectedIds.length} lamaran?`;
     if (!confirm(confirmMsg)) return;
 
+    setBulkDeleteLoading(true);
     try {
       await Promise.all(
         selectedIds.map(id => 
@@ -311,12 +396,15 @@ export function ApplicationsList() {
     } catch (error) {
       console.error("Error bulk deleting:", error);
       alert("Gagal menghapus beberapa lamaran");
+    } finally {
+      setBulkDeleteLoading(false);
     }
   }
 
   async function handleBulkUpdateStatus(newStatus: string) {
     if (selectedIds.length === 0) return;
 
+    setBulkStatusLoading(true);
     try {
       await Promise.all(
         selectedIds.map(id => 
@@ -335,6 +423,8 @@ export function ApplicationsList() {
     } catch (error) {
       console.error("Error bulk updating:", error);
       alert("Gagal update beberapa lamaran");
+    } finally {
+      setBulkStatusLoading(false);
     }
   }
 
@@ -387,9 +477,11 @@ export function ApplicationsList() {
               <div className="relative">
                 <button
                   onClick={() => setShowBulkActions(!showBulkActions)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  disabled={bulkStatusLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Ubah Status
+                  {bulkStatusLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {bulkStatusLoading ? "Mengupdate..." : "Ubah Status"}
                 </button>
                 {showBulkActions && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
@@ -442,9 +534,15 @@ export function ApplicationsList() {
               {/* Bulk Delete */}
               <button
                 onClick={handleBulkDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                disabled={bulkDeleteLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Hapus Terpilih
+                {bulkDeleteLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                {bulkDeleteLoading ? "Menghapus..." : "Hapus Terpilih"}
               </button>
             </div>
           </div>
@@ -545,12 +643,16 @@ export function ApplicationsList() {
           </div>
           <button
             onClick={exportToCSV}
-            disabled={applications.length === 0}
+            disabled={applications.length === 0 || exportLoading}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Export semua data ke CSV"
           >
-            <Download className="w-5 h-5" />
-            Export CSV
+            {exportLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+            {exportLoading ? "Exporting..." : "Export CSV"}
           </button>
           <button
             onClick={() => {
@@ -627,26 +729,27 @@ export function ApplicationsList() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {dateFilteredApps.map((app) => {
             // Different card styles based on status
-            let cardClassName = "relative bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
+            let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
             
             if (app.status === "applied") {
-              cardClassName = "relative bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+              cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
             } else if (app.status === "offer") {
-              cardClassName = "relative bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+              cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
             } else if (app.status === "none") {
-              cardClassName = "relative bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+              cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
             } else if (app.status === "reject") {
-              cardClassName = "relative bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+              cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
             } else if (app.status === "unresponded") {
-              cardClassName = "relative bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+              cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
             } else if (app.status === "closed") {
-              cardClassName = "relative bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
+              cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
             }
 
             return (
             <div
               key={app.id}
-              className={cardClassName}
+              className={`${cardClassName} cursor-pointer`}
+              onClick={() => setViewingApp(app)}
             >
               {/* Checkbox for bulk selection */}
               <div className="absolute top-4 right-4">
@@ -722,6 +825,29 @@ export function ApplicationsList() {
                   <span>📅</span>
                   <span>{formatDate(app.appliedDate)}</span>
                 </div>
+                
+                {/* Deadline Display */}
+                {app.deadline && (() => {
+                  const deadlineInfo = getDeadlineInfo(app.deadline);
+                  return (
+                    <div className={`flex items-center gap-2 ${
+                      deadlineInfo.urgent ? 'animate-pulse' : ''
+                    }`}>
+                      <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${
+                        app.status === "applied" || app.status === "offer"
+                          ? "bg-white/10 backdrop-blur-sm border-white/30 text-white font-semibold"
+                          : `${deadlineInfo.bgColor} ${deadlineInfo.borderColor} ${deadlineInfo.color} font-semibold`
+                      }`}>
+                        <span className="text-base">{deadlineInfo.icon}</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs opacity-80">Deadline:</span>
+                          <span className="text-sm font-bold">{deadlineInfo.text}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                
                 {app.platform && (
                   <div className={`flex items-center gap-2 ${
                     app.status === "applied"
@@ -780,7 +906,35 @@ export function ApplicationsList() {
                 )}
               </div>
 
-              <div className={`flex items-center gap-2 pt-4 border-t ${
+              {/* Notes Section */}
+              {app.notes && (
+                <div className={`mt-3 px-3 py-2 rounded-lg ${
+                  app.status === "applied"
+                    ? "bg-blue-500/20 border border-blue-400/30"
+                    : app.status === "offer"
+                    ? "bg-green-500/20 border border-green-400/30"
+                    : "bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <span className={`text-sm mt-0.5 ${
+                      app.status === "applied" || app.status === "offer"
+                        ? "text-white/80"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}>📝</span>
+                    <p className={`text-sm flex-1 truncate ${
+                      app.status === "applied"
+                        ? "text-blue-50"
+                        : app.status === "offer"
+                        ? "text-green-50"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`} title={app.notes}>
+                      {app.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className={`flex items-center gap-2 pt-4 mt-auto border-t ${
                 app.status === "applied"
                   ? "border-blue-400/30"
                   : app.status === "offer"
@@ -788,23 +942,21 @@ export function ApplicationsList() {
                   : "border-gray-200 dark:border-gray-700"
               }`}>
                 <button
-                  onClick={() => setViewingApp(app)}
-                  className={`flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
-                    app.status === "applied" || app.status === "offer"
-                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                      : "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/dashboard/application/${app.id}`);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
                 >
                   <Eye className="w-4 h-4" />
                   Detail
                 </button>
                 <button
-                  onClick={() => handleDuplicate(app)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    app.status === "applied" || app.status === "offer"
-                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                      : "text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDuplicate(app);
+                  }}
+                  className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
                   title="Duplikasi Lamaran"
                 >
                   <Copy className="w-4 h-4" />
@@ -814,11 +966,8 @@ export function ApplicationsList() {
                     href={app.locationMapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-lg transition-colors ${
-                      app.status === "applied" || app.status === "offer"
-                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                        : "text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white"
                     title="Buka di Google Maps"
                   >
                     <MapPin className="w-4 h-4" />
@@ -829,11 +978,8 @@ export function ApplicationsList() {
                     href={app.cvLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-lg transition-colors ${
-                      app.status === "applied" || app.status === "offer"
-                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                        : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white"
                     title="Lihat CV"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -844,36 +990,29 @@ export function ApplicationsList() {
                     href={app.jobLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-lg transition-colors ${
-                      app.status === "applied" || app.status === "offer"
-                        ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                        : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
                     title="Lihat Lowongan"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditingApp(app);
                     setShowForm(true);
                   }}
-                  className={`p-2 rounded-lg transition-colors ${
-                    app.status === "applied" || app.status === "offer"
-                      ? "text-white hover:bg-white/20 backdrop-blur-sm"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
+                  className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setDeletingApp(app)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    app.status === "applied" || app.status === "offer"
-                      ? "text-white hover:bg-red-500/30 backdrop-blur-sm"
-                      : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingApp(app);
+                  }}
+                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

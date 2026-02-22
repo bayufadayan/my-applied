@@ -120,6 +120,7 @@ export const jobApplications = pgTable("job_applications", {
 
   // Application Info
   appliedDate: timestamp("applied_date", { mode: "date" }).notNull(),
+  deadline: timestamp("deadline", { mode: "date" }),
   platformId: uuid("platform_id").references(() => platforms.id, {
     onDelete: "set null",
   }),
