@@ -194,7 +194,7 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
                         </div>
 
                         {/* Summary Stats */}
-                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4">
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="text-center">
                                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{activeApplications}</p>
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Active Process</p>

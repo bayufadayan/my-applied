@@ -726,7 +726,7 @@ export function ApplicationsList() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
           {dateFilteredApps.map((app) => {
             // Different card styles based on status
             let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
@@ -748,7 +748,7 @@ export function ApplicationsList() {
             return (
             <div
               key={app.id}
-              className={`${cardClassName} cursor-pointer`}
+              className={`${cardClassName} cursor-pointer min-w-0 w-full`}
               onClick={() => setViewingApp(app)}
             >
               {/* Checkbox for bulk selection */}
@@ -784,16 +784,16 @@ export function ApplicationsList() {
                 </button>
               </div>
 
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className={`font-semibold text-lg mb-1 ${
+              <div className="flex items-start justify-between mb-4 gap-2 min-w-0">
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
                     app.status === "applied" || app.status === "offer"
                       ? "text-white" 
                       : "text-gray-900 dark:text-white"
                   }`}>
                     {app.position}
                   </h3>
-                  <p className={`text-sm ${
+                  <p className={`text-sm wrap-break-word ${
                     app.status === "applied"
                       ? "text-blue-50"
                       : app.status === "offer"
@@ -804,7 +804,7 @@ export function ApplicationsList() {
                   </p>
                 </div>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${
                     app.status === "applied" || app.status === "offer"
                       ? "bg-white/20 text-white backdrop-blur-sm"
                       : statusColors[app.status as keyof typeof statusColors]
@@ -814,7 +814,7 @@ export function ApplicationsList() {
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm mb-4">
+              <div className="space-y-2 text-sm mb-4 min-w-0">
                 <div className={`flex items-center gap-2 ${
                   app.status === "applied"
                     ? "text-blue-50"
@@ -822,8 +822,8 @@ export function ApplicationsList() {
                     ? "text-green-50"
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
-                  <span>📅</span>
-                  <span>{formatDate(app.appliedDate)}</span>
+                  <span className="shrink-0">📅</span>
+                  <span className="wrap-break-word">{formatDate(app.appliedDate)}</span>
                 </div>
                 
                 {/* Deadline Display */}
@@ -849,25 +849,25 @@ export function ApplicationsList() {
                 })()}
                 
                 {app.platform && (
-                  <div className={`flex items-center gap-2 ${
+                  <div className={`flex items-center gap-2 min-w-0 ${
                     app.status === "applied"
                       ? "text-blue-50"
                       : app.status === "offer"
                       ? "text-green-50"
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
-                    <span>🌐</span>
-                    <span>{app.platform.name}</span>
+                    <span className="shrink-0">🌐</span>
+                    <span className="wrap-break-word">{app.platform.name}</span>
                   </div>
                 )}
-                <div className={`flex items-center gap-2 ${
+                <div className={`flex items-center gap-2 flex-wrap ${
                   app.status === "applied"
                     ? "text-blue-50"
                     : app.status === "offer"
                     ? "text-green-50"
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
-                  <span>💼</span>
+                  <span className="shrink-0">💼</span>
                   <span className="capitalize">
                     {app.jobType.replace("_", " ")}
                   </span>
@@ -875,15 +875,15 @@ export function ApplicationsList() {
                   <span className="capitalize">{app.workPolicy}</span>
                 </div>
                 {(app.salaryMin || app.salaryMax) && (
-                  <div className={`flex items-center gap-2 ${
+                  <div className={`flex items-center gap-2 flex-wrap ${
                     app.status === "applied"
                       ? "text-blue-50"
                       : app.status === "offer"
                       ? "text-green-50"
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
-                    <span>💰</span>
-                    <span>
+                    <span className="shrink-0">💰</span>
+                    <span className="wrap-break-word">
                       {app.salaryMin && app.salaryMax
                         ? `${formatSalary(app.salaryMin)} - ${formatSalary(app.salaryMax)}`
                         : app.salaryMin
@@ -893,15 +893,15 @@ export function ApplicationsList() {
                   </div>
                 )}
                 {app.location && (
-                  <div className={`flex items-center gap-2 ${
+                  <div className={`flex items-center gap-2 min-w-0 ${
                     app.status === "applied"
                       ? "text-blue-50"
                       : app.status === "offer"
                       ? "text-green-50"
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
-                    <MapPin className="w-4 h-4" />
-                    <span>{app.location}</span>
+                    <MapPin className="w-4 h-4 shrink-0" />
+                    <span className="wrap-break-word">{app.location}</span>
                   </div>
                 )}
               </div>
@@ -934,7 +934,7 @@ export function ApplicationsList() {
                 </div>
               )}
 
-              <div className={`flex items-center gap-2 pt-4 mt-auto border-t ${
+              <div className={`flex flex-wrap items-center gap-2 pt-4 mt-auto border-t ${
                 app.status === "applied"
                   ? "border-blue-400/30"
                   : app.status === "offer"
@@ -946,17 +946,17 @@ export function ApplicationsList() {
                     e.stopPropagation();
                     router.push(`/dashboard/application/${app.id}`);
                   }}
-                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+                  className="flex-1 min-w-25 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
                 >
                   <Eye className="w-4 h-4" />
-                  Detail
+                  <span className="hidden sm:inline">Detail</span>
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDuplicate(app);
                   }}
-                  className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
+                  className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shrink-0"
                   title="Duplikasi Lamaran"
                 >
                   <Copy className="w-4 h-4" />
@@ -967,7 +967,7 @@ export function ApplicationsList() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white"
+                    className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shrink-0"
                     title="Buka di Google Maps"
                   >
                     <MapPin className="w-4 h-4" />
@@ -979,7 +979,7 @@ export function ApplicationsList() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white"
+                    className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white shrink-0"
                     title="Lihat CV"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -991,7 +991,7 @@ export function ApplicationsList() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
+                    className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shrink-0"
                     title="Lihat Lowongan"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -1003,7 +1003,8 @@ export function ApplicationsList() {
                     setEditingApp(app);
                     setShowForm(true);
                   }}
-                  className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white"
+                  className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white shrink-0"
+                  title="Edit Lamaran"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -1012,7 +1013,8 @@ export function ApplicationsList() {
                     e.stopPropagation();
                     setDeletingApp(app);
                   }}
-                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white"
+                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink-0"
+                  title="Hapus Lamaran"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
