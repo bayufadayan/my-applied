@@ -115,7 +115,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-red-600 dark:text-red-400",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       borderColor: "border-red-300 dark:border-red-800",
-      icon: "🔴",
       urgent: true
     };
   } else if (daysLeft === 0) {
@@ -124,7 +123,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-red-600 dark:text-red-400",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       borderColor: "border-red-300 dark:border-red-800",
-      icon: "🔴",
       urgent: true
     };
   } else if (daysLeft === 1) {
@@ -133,7 +131,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       borderColor: "border-orange-300 dark:border-orange-800",
-      icon: "⚠️",
       urgent: true
     };
   } else if (daysLeft <= 3) {
@@ -142,7 +139,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       borderColor: "border-orange-300 dark:border-orange-800",
-      icon: "⚠️",
       urgent: true
     };
   } else if (daysLeft <= 7) {
@@ -151,7 +147,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-yellow-600 dark:text-yellow-400",
       bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
       borderColor: "border-yellow-300 dark:border-yellow-800",
-      icon: "⏰",
       urgent: false
     };
   } else {
@@ -160,7 +155,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
       borderColor: "border-blue-300 dark:border-blue-800",
-      icon: "📅",
       urgent: false
     };
   }
@@ -186,6 +180,7 @@ export function ApplicationsList() {
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [showOnlyWithDeadline, setShowOnlyWithDeadline] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -264,6 +259,26 @@ export function ApplicationsList() {
 
     return monthMatch && yearMatch;
   });
+
+  // Filter by deadline
+  let finalFilteredApps = showOnlyWithDeadline
+    ? dateFilteredApps.filter((app) => app.deadline !== null)
+    : dateFilteredApps;
+
+  // Sort by deadline proximity when deadline filter is active
+  if (showOnlyWithDeadline) {
+    finalFilteredApps = [...finalFilteredApps].sort((a, b) => {
+      const deadlineA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+      const deadlineB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+      const now = new Date().getTime();
+      
+      // Calculate absolute difference from now
+      const diffA = Math.abs(deadlineA - now);
+      const diffB = Math.abs(deadlineB - now);
+      
+      return diffA - diffB; // Closest deadline first
+    });
+  }
 
   // Get available years from applications
   const availableYears = Array.from(
@@ -611,6 +626,24 @@ export function ApplicationsList() {
             ))}
           </select>
 
+          {/* Deadline Filter Toggle */}
+          <button
+            onClick={() => setShowOnlyWithDeadline(!showOnlyWithDeadline)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
+              showOnlyWithDeadline
+                ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600 dark:bg-purple-500 dark:hover:bg-purple-600 dark:border-purple-500"
+                : "bg-white hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
+            }`}
+            title="Filter hanya yang punya deadline (terurut dari deadline terdekat)"
+          >
+            <span className="text-sm font-medium">Punya Deadline</span>
+            {showOnlyWithDeadline && (
+              <span className="ml-1 bg-white/20 px-2 py-0.5 rounded text-xs">
+                {dateFilteredApps.filter(app => app.deadline !== null).length}
+              </span>
+            )}
+          </button>
+
           {/* Sort Button */}
           <div className="relative">
             <button
@@ -635,7 +668,7 @@ export function ApplicationsList() {
                         : "text-gray-700 dark:text-gray-300"
                     }`}
                   >
-                    {option.value === sortBy && "✓ "}{option.label}
+                    {option.label}
                   </button>
                 ))}
               </div>
@@ -717,17 +750,17 @@ export function ApplicationsList() {
       </div>
 
       {/* Applications Grid/Table */}
-      {dateFilteredApps.length === 0 ? (
+      {finalFilteredApps.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <p className="text-gray-600 dark:text-gray-400">
-            {filter === "all" && selectedMonth === "all" && selectedYear === "all"
+            {filter === "all" && selectedMonth === "all" && selectedYear === "all" && !showOnlyWithDeadline
               ? "Belum ada lamaran. Tambahkan lamaran pertama Anda!"
               : "Tidak ada lamaran yang sesuai dengan filter yang dipilih"}
           </p>
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
-          {dateFilteredApps.map((app) => {
+          {finalFilteredApps.map((app) => {
             // Different card styles based on status
             let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
             
@@ -822,7 +855,6 @@ export function ApplicationsList() {
                     ? "text-green-50"
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
-                  <span className="shrink-0">📅</span>
                   <span className="wrap-break-word">{formatDate(app.appliedDate)}</span>
                 </div>
                 
@@ -838,7 +870,6 @@ export function ApplicationsList() {
                           ? "bg-white/10 backdrop-blur-sm border-white/30 text-white font-semibold"
                           : `${deadlineInfo.bgColor} ${deadlineInfo.borderColor} ${deadlineInfo.color} font-semibold`
                       }`}>
-                        <span className="text-base">{deadlineInfo.icon}</span>
                         <div className="flex flex-col">
                           <span className="text-xs opacity-80">Deadline:</span>
                           <span className="text-sm font-bold">{deadlineInfo.text}</span>

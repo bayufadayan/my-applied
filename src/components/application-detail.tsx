@@ -165,23 +165,19 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
               let bgColor = "bg-blue-50 dark:bg-blue-900/20";
               let textColor = "text-blue-600 dark:text-blue-400";
               let borderColor = "border-blue-200 dark:border-blue-800";
-              let icon = "📅";
               
               if (daysLeft < 0) {
                 bgColor = "bg-red-50 dark:bg-red-900/20";
                 textColor = "text-red-600 dark:text-red-400";
                 borderColor = "border-red-200 dark:border-red-800";
-                icon = "🔴";
               } else if (daysLeft <= 3) {
                 bgColor = "bg-orange-50 dark:bg-orange-900/20";
                 textColor = "text-orange-600 dark:text-orange-400";
                 borderColor = "border-orange-200 dark:border-orange-800";
-                icon = "⚠️";
               }
               
               return (
                 <div className={`flex items-start gap-3 p-4 ${bgColor} rounded-lg border-2 ${borderColor}`}>
-                  <span className="text-xl mt-0.5">{icon}</span>
                   <div className="flex-1">
                     <p className={`text-sm ${textColor} font-medium`}>Deadline</p>
                     <p className={`font-bold ${textColor} mt-1`}>

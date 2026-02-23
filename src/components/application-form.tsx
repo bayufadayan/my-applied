@@ -251,7 +251,7 @@ export function ApplicationForm({
             </h2>
             {isDuplicate && (
               <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
-                📋 Duplicate Mode
+                Duplicate Mode
               </span>
             )}
           </div>
@@ -285,9 +285,10 @@ export function ApplicationForm({
         {!isQuickAddMode && (
           <div className="px-6 py-8">
             <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-4">
-              💡 Klik pada step untuk navigasi cepat
+              Klik pada step untuk navigasi cepat
             </p>
-            <div className="flex items-center justify-between max-w-xl mx-auto">
+            {/* Desktop: Horizontal layout */}
+            <div className="hidden md:flex items-center justify-between max-w-xl mx-auto">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center" style={{ flex: '1 1 0' }}>
                 {/* Step Circle */}
@@ -339,6 +340,115 @@ export function ApplicationForm({
               </div>
             ))}
           </div>
+
+            {/* Mobile: 2-row grid layout (1-2-3 / 4-5) */}
+            <div className="md:hidden max-w-xl mx-auto space-y-6">
+              {/* First Row: Steps 1-2-3 */}
+              <div className="flex items-center justify-center">
+                {steps.slice(0, 3).map((step, index) => (
+                  <div key={step.number} className="flex items-center">
+                    {/* Step Circle */}
+                    <div className="flex flex-col items-center w-20">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(step.number)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 cursor-pointer ${
+                          currentStep > step.number
+                            ? "bg-green-500 text-white hover:bg-green-600"
+                            : currentStep === step.number
+                            ? "bg-blue-600 text-white ring-4 ring-blue-200 dark:ring-blue-900"
+                            : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+                        }`}
+                        title={`${step.label}`}
+                      >
+                        {currentStep > step.number ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          step.number
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(step.number)}
+                        className={`mt-2 text-xs font-medium text-center transition-colors hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer leading-tight ${
+                          currentStep >= step.number
+                            ? "text-gray-900 dark:text-white"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        {step.label}
+                      </button>
+                    </div>
+
+                    {/* Connector Line */}
+                    {index < 2 && (
+                      <div className="h-1 w-8 mx-2 -mt-8">
+                        <div
+                          className={`h-full rounded transition-all duration-300 ${
+                            currentStep > step.number
+                              ? "bg-green-500"
+                              : "bg-gray-200 dark:bg-gray-700"
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Second Row: Steps 4-5 */}
+              <div className="flex items-center justify-center">
+                {steps.slice(3, 5).map((step, index) => (
+                  <div key={step.number} className="flex items-center">
+                    {/* Step Circle */}
+                    <div className="flex flex-col items-center w-20">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(step.number)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 cursor-pointer ${
+                          currentStep > step.number
+                            ? "bg-green-500 text-white hover:bg-green-600"
+                            : currentStep === step.number
+                            ? "bg-blue-600 text-white ring-4 ring-blue-200 dark:ring-blue-900"
+                            : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+                        }`}
+                        title={`${step.label}`}
+                      >
+                        {currentStep > step.number ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          step.number
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(step.number)}
+                        className={`mt-2 text-xs font-medium text-center transition-colors hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer leading-tight ${
+                          currentStep >= step.number
+                            ? "text-gray-900 dark:text-white"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        {step.label}
+                      </button>
+                    </div>
+
+                    {/* Connector Line */}
+                    {index < 1 && (
+                      <div className="h-1 w-8 mx-2 -mt-8">
+                        <div
+                          className={`h-full rounded transition-all duration-300 ${
+                            currentStep > step.number
+                              ? "bg-green-500"
+                              : "bg-gray-200 dark:bg-gray-700"
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
         </div>
         )}
 
@@ -478,7 +588,7 @@ export function ApplicationForm({
                         ))}
                       </datalist>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        💡 Mulai ketik untuk melihat suggestions
+                        Mulai ketik untuk melihat suggestions
                       </p>
                     </div>
 
@@ -579,7 +689,7 @@ export function ApplicationForm({
                         required
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        📅 Pilih tanggal ketika Anda melamar
+                        Pilih tanggal ketika Anda melamar
                       </p>
                     </div>
 
@@ -620,7 +730,7 @@ export function ApplicationForm({
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          ⏰ Tanggal terakhir untuk melamar atau merespon
+                          Tanggal terakhir untuk melamar atau merespon
                         </p>
                       </div>
                     )}
@@ -744,7 +854,7 @@ export function ApplicationForm({
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      💡 Ketik angka lalu klik tombol shortcut (contoh: 5,5 × Juta = 5 500 000)
+                      Ketik angka lalu klik tombol shortcut (contoh: 5,5 × Juta = 5 500 000)
                     </p>
                   </div>
                 </div>
@@ -799,7 +909,7 @@ export function ApplicationForm({
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      💡 Ketik angka lalu klik tombol shortcut (contoh: 5,5 × Juta = 5 500 000)
+                      Ketik angka lalu klik tombol shortcut (contoh: 5,5 × Juta = 5 500 000)
                     </p>
                   </div>
                 </div>
@@ -811,7 +921,7 @@ export function ApplicationForm({
               <div className="space-y-5 animate-fadeIn">
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    💡 <strong>Tips:</strong> Ruang ini lebih luas untuk Anda menulis Job Description dan Catatan dengan lebih leluasa.
+                    <strong>Tips:</strong> Ruang ini lebih luas untuk Anda menulis Job Description dan Catatan dengan lebih leluasa.
                   </p>
                 </div>
 
@@ -955,7 +1065,7 @@ export function ApplicationForm({
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    💡 Tip: Buka Google Maps, cari lokasi kantor, klik Share → Copy link
+                    Tip: Buka Google Maps, cari lokasi kantor, klik Share → Copy link
                   </p>
                 </div>
               </div>

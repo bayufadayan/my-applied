@@ -165,7 +165,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-red-600 dark:text-red-400",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       borderColor: "border-red-300 dark:border-red-800",
-      icon: "🔴",
       urgent: true
     };
   } else if (daysLeft === 0) {
@@ -174,7 +173,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-red-600 dark:text-red-400",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       borderColor: "border-red-300 dark:border-red-800",
-      icon: "🔴",
       urgent: true
     };
   } else if (daysLeft === 1) {
@@ -183,7 +181,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       borderColor: "border-orange-300 dark:border-orange-800",
-      icon: "⚠️",
       urgent: true
     };
   } else if (daysLeft <= 3) {
@@ -192,7 +189,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       borderColor: "border-orange-300 dark:border-orange-800",
-      icon: "⚠️",
       urgent: true
     };
   } else if (daysLeft <= 7) {
@@ -201,7 +197,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-yellow-600 dark:text-yellow-400",
       bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
       borderColor: "border-yellow-300 dark:border-yellow-800",
-      icon: "⏰",
       urgent: false
     };
   } else {
@@ -210,7 +205,6 @@ function getDeadlineInfo(deadline: Date) {
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
       borderColor: "border-blue-300 dark:border-blue-800",
-      icon: "📅",
       urgent: false
     };
   }
