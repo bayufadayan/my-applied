@@ -352,7 +352,6 @@ export default function ApplicationDetailPage() {
               return (
                 <div className={`${deadlineInfo.bgColor} border-2 ${deadlineInfo.borderColor} rounded-xl p-6 ${deadlineInfo.urgent ? 'animate-pulse' : ''}`}>
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl">{deadlineInfo.icon}</span>
                     <div>
                       <h3 className={`text-lg font-bold ${deadlineInfo.color}`}>
                         Deadline Lamaran
