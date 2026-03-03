@@ -33,25 +33,25 @@ export async function GET(request: Request) {
 
     switch (sortBy) {
       case "oldest":
-        orderBy = [asc(jobApplications.createdAt)];
+        orderBy = [desc(jobApplications.isPinned), asc(jobApplications.createdAt)];
         break;
       case "company-az":
-        orderBy = [asc(jobApplications.companyName)];
+        orderBy = [desc(jobApplications.isPinned), asc(jobApplications.companyName)];
         break;
       case "company-za":
-        orderBy = [desc(jobApplications.companyName)];
+        orderBy = [desc(jobApplications.isPinned), desc(jobApplications.companyName)];
         break;
       case "position-az":
-        orderBy = [asc(jobApplications.position)];
+        orderBy = [desc(jobApplications.isPinned), asc(jobApplications.position)];
         break;
       case "position-za":
-        orderBy = [desc(jobApplications.position)];
+        orderBy = [desc(jobApplications.isPinned), desc(jobApplications.position)];
         break;
       case "salary-high":
-        orderBy = [desc(jobApplications.salaryMax), desc(jobApplications.salaryMin)];
+        orderBy = [desc(jobApplications.isPinned), desc(jobApplications.salaryMax), desc(jobApplications.salaryMin)];
         break;
       case "salary-low":
-        orderBy = [asc(jobApplications.salaryMin), asc(jobApplications.salaryMax)];
+        orderBy = [desc(jobApplications.isPinned), asc(jobApplications.salaryMin), asc(jobApplications.salaryMax)];
         break;
       case "status-high":
       case "status-low":
@@ -64,6 +64,12 @@ export async function GET(request: Request) {
         });
         
         applications = allApps.sort((a, b) => {
+          // First sort by pinned status
+          if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+          }
+          
+          // Then by status priority
           const priorityA = statusPriority[a.status] || 0;
           const priorityB = statusPriority[b.status] || 0;
           return sortBy === "status-high" 
@@ -73,7 +79,7 @@ export async function GET(request: Request) {
         break;
       case "newest":
       default:
-        orderBy = [desc(jobApplications.createdAt)];
+        orderBy = [desc(jobApplications.isPinned), desc(jobApplications.createdAt)];
         break;
     }
 

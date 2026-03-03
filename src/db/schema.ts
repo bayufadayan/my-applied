@@ -6,6 +6,7 @@ import {
   varchar,
   pgEnum,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -140,6 +141,9 @@ export const jobApplications = pgTable("job_applications", {
 
   // Notes
   notes: text("notes"),
+
+  // Pin status
+  isPinned: boolean("is_pinned").notNull().default(false),
 
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

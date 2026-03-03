@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2, Pin } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -33,6 +33,7 @@ export interface JobApplication {
   location: string | null;
   locationMapLink: string | null;
   notes: string | null;
+  isPinned: boolean;
   platform?: Platform | null;
 }
 
@@ -181,6 +182,7 @@ export function ApplicationsList() {
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [showOnlyWithDeadline, setShowOnlyWithDeadline] = useState(false);
+  const [pinningId, setPinningId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -455,6 +457,32 @@ export function ApplicationsList() {
     setEditingApp(duplicatedApp as JobApplication);
     setIsDuplicateMode(true);
     setShowForm(true);
+  }
+
+  async function togglePin(app: JobApplication) {
+    setPinningId(app.id);
+    try {
+      const res = await fetch(`/api/applications/${app.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isPinned: !app.isPinned,
+        }),
+      });
+
+      if (res.ok) {
+        const updatedApp = await res.json();
+        setApplications(applications.map((a) => 
+          a.id === app.id ? { ...a, isPinned: updatedApp.isPinned } : a
+        ));
+      }
+    } catch (error) {
+      console.error("Error toggling pin:", error);
+    } finally {
+      setPinningId(null);
+    }
   }
 
   if (loading) {
@@ -759,31 +787,35 @@ export function ApplicationsList() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
-          {finalFilteredApps.map((app) => {
-            // Different card styles based on status
-            let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
-            
-            if (app.status === "applied") {
-              cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-            } else if (app.status === "offer") {
-              cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-            } else if (app.status === "none") {
-              cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
-            } else if (app.status === "reject") {
-              cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
-            } else if (app.status === "unresponded") {
-              cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
-            } else if (app.status === "closed") {
-              cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
-            }
+        <div className="space-y-6">
+          {/* Pinned Applications */}
+          {finalFilteredApps.some(app => app.isPinned) && (
+            <>
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
+                {finalFilteredApps.filter(app => app.isPinned).map((app) => {
+                  // Different card styles based on status
+                  let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  
+                  if (app.status === "applied") {
+                    cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                  } else if (app.status === "offer") {
+                    cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                  } else if (app.status === "none") {
+                    cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  } else if (app.status === "reject") {
+                    cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  } else if (app.status === "unresponded") {
+                    cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  } else if (app.status === "closed") {
+                    cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
+                  }
 
-            return (
-            <div
-              key={app.id}
-              className={`${cardClassName} cursor-pointer min-w-0 w-full`}
-              onClick={() => setViewingApp(app)}
-            >
+                  return (
+                  <div
+                    key={app.id}
+                    className={`${cardClassName} cursor-pointer min-w-0 w-full`}
+                    onClick={() => setViewingApp(app)}
+                  >
               {/* Checkbox for bulk selection */}
               <div className="absolute top-4 right-4">
                 <button
@@ -985,6 +1017,27 @@ export function ApplicationsList() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    togglePin(app);
+                  }}
+                  disabled={pinningId === app.id}
+                  className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    pinningId === app.id
+                      ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                      : app.isPinned 
+                      ? "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600" 
+                      : "bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
+                  } text-white`}
+                  title={pinningId === app.id ? "Loading..." : (app.isPinned ? "Unpin" : "Pin")}
+                >
+                  {pinningId === app.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Pin className={`w-4 h-4 ${app.isPinned ? 'fill-current' : ''}`} />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     handleDuplicate(app);
                   }}
                   className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shrink-0"
@@ -1053,6 +1106,343 @@ export function ApplicationsList() {
             </div>
             );
           })}
+        </div>
+        
+        {/* Divider between pinned and unpinned */}
+        {finalFilteredApps.some(app => !app.isPinned) && (
+          <div className="flex items-center gap-4 py-4">
+            <div className="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600"></div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full border-2 border-gray-300 dark:border-gray-600">
+              <Pin className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                Lamaran Lainnya
+              </span>
+            </div>
+            <div className="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600"></div>
+          </div>
+        )}
+      </>
+          )}
+          
+          {/* Non-Pinned Applications */}
+          {finalFilteredApps.some(app => !app.isPinned) && (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
+              {finalFilteredApps.filter(app => !app.isPinned).map((app) => {
+                // Different card styles based on status
+                let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
+                
+                if (app.status === "applied") {
+                  cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                } else if (app.status === "offer") {
+                  cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                } else if (app.status === "none") {
+                  cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                } else if (app.status === "reject") {
+                  cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                } else if (app.status === "unresponded") {
+                  cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                } else if (app.status === "closed") {
+                  cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
+                }
+
+                return (
+                <div
+                  key={app.id}
+                  className={`${cardClassName} cursor-pointer min-w-0 w-full`}
+                  onClick={() => setViewingApp(app)}
+                >
+            {/* Checkbox for bulk selection */}
+            <div className="absolute top-4 right-4">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSelect(app.id);
+                }}
+                className={`p-1 rounded transition-colors ${
+                  app.status === "applied" || app.status === "offer"
+                    ? "hover:bg-white/20"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                {selectedIds.includes(app.id) ? (
+                  <CheckSquare className={`w-5 h-5 ${
+                    app.status === "applied"
+                      ? "text-white"
+                      : app.status === "offer"
+                      ? "text-white"
+                      : "text-blue-600 dark:text-blue-400"
+                  }`} />
+                ) : (
+                  <Square className={`w-5 h-5 ${
+                    app.status === "applied"
+                      ? "text-blue-100"
+                      : app.status === "offer"
+                      ? "text-green-100"
+                      : "text-gray-400"
+                  }`} />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-start justify-between mb-4 gap-2 min-w-0">
+              <div className="flex-1 min-w-0">
+                <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
+                  app.status === "applied" || app.status === "offer"
+                    ? "text-white" 
+                    : "text-gray-900 dark:text-white"
+                }`}>
+                  {app.position}
+                </h3>
+                <p className={`text-sm wrap-break-word ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
+                  {app.companyName || "Perusahaan tidak disebutkan"}
+                </p>
+              </div>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${
+                  app.status === "applied" || app.status === "offer"
+                    ? "bg-white/20 text-white backdrop-blur-sm"
+                    : statusColors[app.status as keyof typeof statusColors]
+                }`}
+              >
+                {statusLabels[app.status as keyof typeof statusLabels]}
+              </span>
+            </div>
+
+            <div className="space-y-2 text-sm mb-4 min-w-0">
+              <div className={`flex items-center gap-2 ${
+                app.status === "applied"
+                  ? "text-blue-50"
+                  : app.status === "offer"
+                  ? "text-green-50"
+                  : "text-gray-600 dark:text-gray-400"
+              }`}>
+                <span className="wrap-break-word">{formatDate(app.appliedDate)}</span>
+              </div>
+              
+              {/* Deadline Display */}
+              {app.deadline && (() => {
+                const deadlineInfo = getDeadlineInfo(app.deadline);
+                return (
+                  <div className={`flex items-center gap-2 ${
+                    deadlineInfo.urgent ? 'animate-pulse' : ''
+                  }`}>
+                    <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${
+                      app.status === "applied" || app.status === "offer"
+                        ? "bg-white/10 backdrop-blur-sm border-white/30 text-white font-semibold"
+                        : `${deadlineInfo.bgColor} ${deadlineInfo.borderColor} ${deadlineInfo.color} font-semibold`
+                    }`}>
+                      <div className="flex flex-col">
+                        <span className="text-xs opacity-80">Deadline:</span>
+                        <span className="text-sm font-bold">{deadlineInfo.text}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              {app.platform && (
+                <div className={`flex items-center gap-2 min-w-0 ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
+                  <span className="shrink-0">🌐</span>
+                  <span className="wrap-break-word">{app.platform.name}</span>
+                </div>
+              )}
+              <div className={`flex items-center gap-2 flex-wrap ${
+                app.status === "applied"
+                  ? "text-blue-50"
+                  : app.status === "offer"
+                  ? "text-green-50"
+                  : "text-gray-600 dark:text-gray-400"
+              }`}>
+                <span className="shrink-0">💼</span>
+                <span className="capitalize">
+                  {app.jobType.replace("_", " ")}
+                </span>
+                <span>•</span>
+                <span className="capitalize">{app.workPolicy}</span>
+              </div>
+              {(app.salaryMin || app.salaryMax) && (
+                <div className={`flex items-center gap-2 flex-wrap ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
+                  <span className="shrink-0">💰</span>
+                  <span className="wrap-break-word">
+                    {app.salaryMin && app.salaryMax
+                      ? `${formatSalary(app.salaryMin)} - ${formatSalary(app.salaryMax)}`
+                      : app.salaryMin
+                      ? `${formatSalary(app.salaryMin)}+`
+                      : `Up to ${formatSalary(app.salaryMax!)}`}
+                  </span>
+                </div>
+              )}
+              {app.location && (
+                <div className={`flex items-center gap-2 min-w-0 ${
+                  app.status === "applied"
+                    ? "text-blue-50"
+                    : app.status === "offer"
+                    ? "text-green-50"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}>
+                  <MapPin className="w-4 h-4 shrink-0" />
+                  <span className="wrap-break-word">{app.location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Notes Section */}
+            {app.notes && (
+              <div className={`mt-3 px-3 py-2 rounded-lg ${
+                app.status === "applied"
+                  ? "bg-blue-500/20 border border-blue-400/30"
+                  : app.status === "offer"
+                  ? "bg-green-500/20 border border-green-400/30"
+                  : "bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+              }`}>
+                <div className="flex items-start gap-2">
+                  <span className={`text-sm mt-0.5 ${
+                    app.status === "applied" || app.status === "offer"
+                      ? "text-white/80"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}>📝</span>
+                  <p className={`text-sm flex-1 truncate ${
+                    app.status === "applied"
+                      ? "text-blue-50"
+                      : app.status === "offer"
+                      ? "text-green-50"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`} title={app.notes}>
+                    {app.notes}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className={`flex flex-wrap items-center gap-2 pt-4 mt-auto border-t ${
+              app.status === "applied"
+                ? "border-blue-400/30"
+                : app.status === "offer"
+                ? "border-green-400/30"
+                : "border-gray-200 dark:border-gray-700"
+            }`}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/dashboard/application/${app.id}`);
+                }}
+                className="flex-1 min-w-25 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="hidden sm:inline">Detail</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePin(app);
+                }}
+                disabled={pinningId === app.id}
+                className={`p-2 rounded-lg transition-colors shrink-0 ${
+                  pinningId === app.id
+                    ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                    : app.isPinned 
+                    ? "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600" 
+                    : "bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
+                } text-white`}
+                title={pinningId === app.id ? "Loading..." : (app.isPinned ? "Unpin" : "Pin")}
+              >
+                {pinningId === app.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Pin className={`w-4 h-4 ${app.isPinned ? 'fill-current' : ''}`} />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDuplicate(app);
+                }}
+                className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shrink-0"
+                title="Duplikasi Lamaran"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              {app.locationMapLink && (
+                <a
+                  href={app.locationMapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shrink-0"
+                  title="Buka di Google Maps"
+                >
+                  <MapPin className="w-4 h-4" />
+                </a>
+              )}
+              {app.cvLink && (
+                <a
+                  href={app.cvLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white shrink-0"
+                  title="Lihat CV"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+              {app.jobLink && (
+                <a
+                  href={app.jobLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shrink-0"
+                  title="Lihat Lowongan"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingApp(app);
+                  setShowForm(true);
+                }}
+                className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white shrink-0"
+                title="Edit Lamaran"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeletingApp(app);
+                }}
+                className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink-0"
+                title="Hapus Lamaran"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          );
+        })}
+      </div>
+          )}
         </div>
       )}
 
