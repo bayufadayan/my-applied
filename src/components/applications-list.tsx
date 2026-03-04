@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2, Pin } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2, Pin, Menu } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -183,6 +183,7 @@ export function ApplicationsList() {
   const [exportLoading, setExportLoading] = useState(false);
   const [showOnlyWithDeadline, setShowOnlyWithDeadline] = useState(false);
   const [pinningId, setPinningId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -232,10 +233,27 @@ export function ApplicationsList() {
     }
   }
 
-  const filteredApps =
-    filter === "all"
-      ? applications
-      : applications.filter((app) => app.status === filter);
+  const filteredApps = (() => {
+    if (filter === "all") {
+      return applications;
+    } else if (filter === "active") {
+      // Active = all except unresponded, reject, and none
+      return applications.filter(
+        (app) => !["unresponded", "reject", "none"].includes(app.status)
+      );
+    } else if (filter === "non-active") {
+      // Non-Active = only unresponded and reject
+      return applications.filter((app) =>
+        ["unresponded", "reject"].includes(app.status)
+      );
+    } else if (filter === "planned") {
+      // Planned = only none
+      return applications.filter((app) => app.status === "none");
+    } else {
+      // Individual status filter
+      return applications.filter((app) => app.status === filter);
+    }
+  })();
 
   // Search filter
   const searchFilteredApps = searchQuery.trim() === ""
@@ -493,8 +511,352 @@ export function ApplicationsList() {
     );
   }
 
+  // Calculate counts for each filter category
+  const counts = {
+    all: applications.length,
+    active: applications.filter(
+      (app) => !["unresponded", "reject", "none"].includes(app.status)
+    ).length,
+    nonActive: applications.filter((app) =>
+      ["unresponded", "reject"].includes(app.status)
+    ).length,
+    planned: applications.filter((app) => app.status === "none").length,
+    applied: applications.filter((app) => app.status === "applied").length,
+    interview: applications.filter((app) => app.status === "interview").length,
+    test: applications.filter((app) => app.status === "test").length,
+    offer: applications.filter((app) => app.status === "offer").length,
+    reject: applications.filter((app) => app.status === "reject").length,
+    unresponded: applications.filter((app) => app.status === "unresponded")
+      .length,
+    closed: applications.filter((app) => app.status === "closed").length,
+    none: applications.filter((app) => app.status === "none").length,
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="flex gap-6 relative">
+      {/* Sidebar */}
+      <div
+        className={`
+          fixed lg:relative inset-y-0 left-0 z-50 
+          w-64 bg-white dark:bg-gray-800 
+          border-r border-gray-200 dark:border-gray-700
+          transform transition-transform duration-300 ease-in-out
+          lg:transform-none lg:block
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
+      >
+        <div className="h-full overflow-y-auto p-4 space-y-1">
+          {/* Mobile Close Button */}
+          <div className="lg:hidden flex justify-end mb-2">
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+
+          {/* Special Filters */}
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                setFilter("all");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "all"
+                  ? "bg-blue-600 text-white dark:bg-blue-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">📋 Semua</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "all"
+                    ? "bg-white/20"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                {counts.all}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("active");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "active"
+                  ? "bg-green-600 text-white dark:bg-green-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">✅ Active</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "active"
+                    ? "bg-white/20"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                {counts.active}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("non-active");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "non-active"
+                  ? "bg-red-600 text-white dark:bg-red-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">❌ Non-Active</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "non-active"
+                    ? "bg-white/20"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                {counts.nonActive}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("planned");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "planned"
+                  ? "bg-purple-600 text-white dark:bg-purple-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">📅 Planned</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "planned"
+                    ? "bg-white/20"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                {counts.planned}
+              </span>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t-2 border-gray-300 dark:border-gray-600"></div>
+
+          {/* Status Filters */}
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2">
+              By Status
+            </p>
+
+            <button
+              onClick={() => {
+                setFilter("applied");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "applied"
+                  ? "bg-blue-600 text-white dark:bg-blue-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Applied</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "applied"
+                    ? "bg-white/20"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                }`}
+              >
+                {counts.applied}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("interview");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "interview"
+                  ? "bg-purple-600 text-white dark:bg-purple-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Interview</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "interview"
+                    ? "bg-white/20"
+                    : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                }`}
+              >
+                {counts.interview}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("test");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "test"
+                  ? "bg-yellow-600 text-white dark:bg-yellow-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Test</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "test"
+                    ? "bg-white/20"
+                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                }`}
+              >
+                {counts.test}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("offer");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "offer"
+                  ? "bg-green-600 text-white dark:bg-green-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Offer</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "offer"
+                    ? "bg-white/20"
+                    : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                }`}
+              >
+                {counts.offer}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("reject");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "reject"
+                  ? "bg-red-600 text-white dark:bg-red-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Rejected</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "reject"
+                    ? "bg-white/20"
+                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                }`}
+              >
+                {counts.reject}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("unresponded");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "unresponded"
+                  ? "bg-orange-600 text-white dark:bg-orange-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Unresponded</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "unresponded"
+                    ? "bg-white/20"
+                    : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                }`}
+              >
+                {counts.unresponded}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("closed");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "closed"
+                  ? "bg-gray-600 text-white dark:bg-gray-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">Closed</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "closed"
+                    ? "bg-white/20"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                }`}
+              >
+                {counts.closed}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("none");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+                filter === "none"
+                  ? "bg-gray-600 text-white dark:bg-gray-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="font-medium">None</span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  filter === "none"
+                    ? "bg-white/20"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                }`}
+              >
+                {counts.none}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Overlay for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 space-y-6">
       {/* Dashboard Statistics */}
       <DashboardStats applications={applications} />
 
@@ -593,14 +955,27 @@ export function ApplicationsList() {
       )}
 
       {/* Header & Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
+          {/* Mobile Sidebar Toggle */}
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Filter"
+          >
+            <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+          </button>
+
           {/* Select All Checkbox */}
           {dateFilteredApps.length > 0 && (
             <button
               onClick={toggleSelectAll}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title={selectedIds.length === dateFilteredApps.length ? "Batal Pilih Semua" : "Pilih Semua"}
+              title={
+                selectedIds.length === dateFilteredApps.length
+                  ? "Batal Pilih Semua"
+                  : "Pilih Semua"
+              }
             >
               {selectedIds.length === dateFilteredApps.length ? (
                 <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -609,15 +984,17 @@ export function ApplicationsList() {
               )}
             </button>
           )}
-          <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Lamaran Saya
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Total: {dateFilteredApps.length} lamaran
-          </p>
+
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Lamaran Saya
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Total: {dateFilteredApps.length} lamaran
+            </p>
           </div>
         </div>
+
         <div className="flex gap-2 flex-wrap">
           {/* Month Filter */}
           <select
@@ -667,7 +1044,10 @@ export function ApplicationsList() {
             <span className="text-sm font-medium">Punya Deadline</span>
             {showOnlyWithDeadline && (
               <span className="ml-1 bg-white/20 px-2 py-0.5 rounded text-xs">
-                {dateFilteredApps.filter(app => app.deadline !== null).length}
+                {
+                  dateFilteredApps.filter((app) => app.deadline !== null)
+                    .length
+                }
               </span>
             )}
           </button>
@@ -679,7 +1059,8 @@ export function ApplicationsList() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
             >
               <ArrowUpDown className="w-4 h-4" />
-              {sortOptions.find(opt => opt.value === sortBy)?.label || "Urut"}
+              {sortOptions.find((opt) => opt.value === sortBy)?.label ||
+                "Urut"}
             </button>
             {showSortMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
@@ -748,33 +1129,6 @@ export function ApplicationsList() {
             <X className="h-5 w-5" />
           </button>
         )}
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {[
-          { value: "all", label: "Semua" },
-          { value: "applied", label: "Applied" },
-          { value: "interview", label: "Interview" },
-          { value: "test", label: "Test" },
-          { value: "offer", label: "Offer" },
-          { value: "reject", label: "Rejected" },
-          { value: "unresponded", label: "Unresponded" },
-          { value: "closed", label: "Closed" },
-          { value: "none", label: "None" },
-        ].map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-              filter === tab.value
-                ? "bg-blue-600 text-white dark:bg-blue-500"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Applications Grid/Table */}
@@ -1496,6 +1850,7 @@ export function ApplicationsList() {
           Tambah Lamaran (Ctrl+N)
         </span>
       </button>
+      </div>
     </div>
   );
 }
