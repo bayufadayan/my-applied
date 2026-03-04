@@ -64,7 +64,7 @@ export function ApplicationForm({
     deadline: application?.deadline ? new Date(application.deadline) : new Date(),
     platformId: application?.platformId || "",
     hrContact: application?.hrContact || "",
-    status: application?.status || "applied",
+    status: application?.status || "none",
     currentStage: application?.currentStage || "none",
     cvLink: application?.cvLink || "",
     jobLink: application?.jobLink || "",
@@ -546,6 +546,32 @@ export function ApplicationForm({
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Link Lowongan
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={formData.jobLink}
+                      onChange={(e) =>
+                        setFormData({ ...formData, jobLink: e.target.value })
+                      }
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white outline-none"
+                      placeholder="https://..."
+                    />
+                    {formData.jobLink && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, jobLink: "" })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
