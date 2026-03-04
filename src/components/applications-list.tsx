@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, Search, X, Download, CheckSquare, Square, Copy, Loader2, Pin, Menu } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, X, Download, CheckSquare, Square, Copy, Loader2, Pin, Menu, List, CheckCircle, XCircle, Calendar } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -202,6 +202,17 @@ export function ApplicationsList() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Listen to header search input
+  useEffect(() => {
+    const handleHeaderSearch = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setSearchQuery(customEvent.detail);
+    };
+
+    window.addEventListener('header-search-change', handleHeaderSearch);
+    return () => window.removeEventListener('header-search-change', handleHeaderSearch);
   }, []);
 
   async function fetchApplications() {
@@ -533,19 +544,25 @@ export function ApplicationsList() {
   };
 
   return (
-    <div className="flex gap-6 relative">
+    <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <div
         className={`
-          fixed lg:relative inset-y-0 left-0 z-50 
+          sidebar-scroll
+          fixed inset-y-0 left-0 z-40
           w-64 bg-white dark:bg-gray-800 
           border-r border-gray-200 dark:border-gray-700
           transform transition-transform duration-300 ease-in-out
-          lg:transform-none lg:block
+          lg:transform-none
+          overflow-y-auto
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
+        style={{ 
+          height: 'calc(100vh - 56px)',
+          top: '56px'
+        }}
       >
-        <div className="h-full overflow-y-auto p-4 space-y-1">
+        <div className="p-3 space-y-1">
           {/* Mobile Close Button */}
           <div className="lg:hidden flex justify-end mb-2">
             <button
@@ -563,15 +580,18 @@ export function ApplicationsList() {
                 setFilter("all");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "all"
                   ? "bg-blue-600 text-white dark:bg-blue-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">📋 Semua</span>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <List className="w-3.5 h-3.5" />
+                Semua
+              </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "all"
                     ? "bg-white/20"
                     : "bg-gray-200 dark:bg-gray-600"
@@ -586,15 +606,18 @@ export function ApplicationsList() {
                 setFilter("active");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "active"
                   ? "bg-green-600 text-white dark:bg-green-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">✅ Active</span>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Active
+              </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "active"
                     ? "bg-white/20"
                     : "bg-gray-200 dark:bg-gray-600"
@@ -609,15 +632,18 @@ export function ApplicationsList() {
                 setFilter("non-active");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "non-active"
                   ? "bg-red-600 text-white dark:bg-red-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">❌ Non-Active</span>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <XCircle className="w-3.5 h-3.5" />
+                Non-Active
+              </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "non-active"
                     ? "bg-white/20"
                     : "bg-gray-200 dark:bg-gray-600"
@@ -632,15 +658,18 @@ export function ApplicationsList() {
                 setFilter("planned");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "planned"
                   ? "bg-purple-600 text-white dark:bg-purple-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">📅 Planned</span>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Calendar className="w-3.5 h-3.5" />
+                Planned
+              </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "planned"
                     ? "bg-white/20"
                     : "bg-gray-200 dark:bg-gray-600"
@@ -652,11 +681,11 @@ export function ApplicationsList() {
           </div>
 
           {/* Divider */}
-          <div className="my-4 border-t-2 border-gray-300 dark:border-gray-600"></div>
+          <div className="my-3 border-t-2 border-gray-300 dark:border-gray-600"></div>
 
           {/* Status Filters */}
           <div className="space-y-1">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-1.5">
               By Status
             </p>
 
@@ -665,15 +694,15 @@ export function ApplicationsList() {
                 setFilter("applied");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "applied"
                   ? "bg-blue-600 text-white dark:bg-blue-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Applied</span>
+              <span className="text-sm font-medium">Applied</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "applied"
                     ? "bg-white/20"
                     : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
@@ -688,15 +717,15 @@ export function ApplicationsList() {
                 setFilter("interview");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "interview"
                   ? "bg-purple-600 text-white dark:bg-purple-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Interview</span>
+              <span className="text-sm font-medium">Interview</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "interview"
                     ? "bg-white/20"
                     : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
@@ -711,15 +740,15 @@ export function ApplicationsList() {
                 setFilter("test");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "test"
                   ? "bg-yellow-600 text-white dark:bg-yellow-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Test</span>
+              <span className="text-sm font-medium">Test</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "test"
                     ? "bg-white/20"
                     : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
@@ -734,15 +763,15 @@ export function ApplicationsList() {
                 setFilter("offer");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "offer"
                   ? "bg-green-600 text-white dark:bg-green-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Offer</span>
+              <span className="text-sm font-medium">Offer</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "offer"
                     ? "bg-white/20"
                     : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
@@ -757,15 +786,15 @@ export function ApplicationsList() {
                 setFilter("reject");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "reject"
                   ? "bg-red-600 text-white dark:bg-red-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Rejected</span>
+              <span className="text-sm font-medium">Rejected</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "reject"
                     ? "bg-white/20"
                     : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
@@ -780,15 +809,15 @@ export function ApplicationsList() {
                 setFilter("unresponded");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "unresponded"
                   ? "bg-orange-600 text-white dark:bg-orange-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Unresponded</span>
+              <span className="text-sm font-medium">Unresponded</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "unresponded"
                     ? "bg-white/20"
                     : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
@@ -803,15 +832,15 @@ export function ApplicationsList() {
                 setFilter("closed");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "closed"
                   ? "bg-gray-600 text-white dark:bg-gray-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">Closed</span>
+              <span className="text-sm font-medium">Closed</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "closed"
                     ? "bg-white/20"
                     : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
@@ -826,15 +855,15 @@ export function ApplicationsList() {
                 setFilter("none");
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                 filter === "none"
                   ? "bg-gray-600 text-white dark:bg-gray-500"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              <span className="font-medium">None</span>
+              <span className="text-sm font-medium">None</span>
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full ${
                   filter === "none"
                     ? "bg-white/20"
                     : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
@@ -856,7 +885,8 @@ export function ApplicationsList() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 space-y-6">
+      <div className="flex-1 overflow-y-auto lg:ml-64">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Dashboard Statistics */}
       <DashboardStats applications={applications} />
 
@@ -1109,28 +1139,6 @@ export function ApplicationsList() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari perusahaan, posisi, lokasi, atau platform..."
-          className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
-
       {/* Applications Grid/Table */}
       {finalFilteredApps.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -1148,20 +1156,20 @@ export function ApplicationsList() {
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
                 {finalFilteredApps.filter(app => app.isPinned).map((app) => {
                   // Different card styles based on status
-                  let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-5 hover:shadow-lg transition-shadow";
                   
                   if (app.status === "applied") {
-                    cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                    cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
                   } else if (app.status === "offer") {
-                    cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                    cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
                   } else if (app.status === "none") {
-                    cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                    cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
                   } else if (app.status === "reject") {
-                    cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                    cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
                   } else if (app.status === "unresponded") {
-                    cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                    cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
                   } else if (app.status === "closed") {
-                    cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
+                    cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-5 hover:shadow-lg transition-shadow opacity-60";
                   }
 
                   return (
@@ -1351,23 +1359,27 @@ export function ApplicationsList() {
                 </div>
               )}
 
-              <div className={`flex flex-wrap items-center gap-2 pt-4 mt-auto border-t ${
+              <div className={`space-y-2 pt-4 mt-auto border-t ${
                 app.status === "applied"
                   ? "border-blue-400/30"
                   : app.status === "offer"
                   ? "border-green-400/30"
                   : "border-gray-200 dark:border-gray-700"
               }`}>
+                {/* Detail Button - Full Width */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     router.push(`/dashboard/application/${app.id}`);
                   }}
-                  className="flex-1 min-w-25 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+                  className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
                 >
                   <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">Detail</span>
+                  <span>Lihat Detail</span>
                 </button>
+                
+                {/* Other Action Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1451,18 +1463,17 @@ export function ApplicationsList() {
                     e.stopPropagation();
                     setDeletingApp(app);
                   }}
-                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink-0"
+                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink flex-1 flex justify-center"
                   title="Hapus Lamaran"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            );
-          })}
-        </div>
-        
-        {/* Divider between pinned and unpinned */}
+          </div>
+          );
+        })}
+      </div>
         {finalFilteredApps.some(app => !app.isPinned) && (
           <div className="flex items-center gap-4 py-4">
             <div className="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600"></div>
@@ -1483,20 +1494,20 @@ export function ApplicationsList() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
               {finalFilteredApps.filter(app => !app.isPinned).map((app) => {
                 // Different card styles based on status
-                let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-6 hover:shadow-lg transition-shadow";
+                let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-5 hover:shadow-lg transition-shadow";
                 
                 if (app.status === "applied") {
-                  cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                  cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
                 } else if (app.status === "offer") {
-                  cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+                  cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
                 } else if (app.status === "none") {
-                  cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
                 } else if (app.status === "reject") {
-                  cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
                 } else if (app.status === "unresponded") {
-                  cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-6 hover:shadow-lg transition-shadow";
+                  cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
                 } else if (app.status === "closed") {
-                  cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60";
+                  cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-5 hover:shadow-lg transition-shadow opacity-60";
                 }
 
                 return (
@@ -1686,7 +1697,7 @@ export function ApplicationsList() {
               </div>
             )}
 
-            <div className={`flex flex-wrap items-center gap-2 pt-4 mt-auto border-t ${
+            <div className={`space-y-2 pt-4 mt-auto border-t ${
               app.status === "applied"
                 ? "border-blue-400/30"
                 : app.status === "offer"
@@ -1698,99 +1709,102 @@ export function ApplicationsList() {
                   e.stopPropagation();
                   router.push(`/dashboard/application/${app.id}`);
                 }}
-                className="flex-1 min-w-25 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
               >
                 <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline">Detail</span>
+                <span>Lihat Detail</span>
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePin(app);
-                }}
-                disabled={pinningId === app.id}
-                className={`p-2 rounded-lg transition-colors shrink-0 ${
-                  pinningId === app.id
-                    ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
-                    : app.isPinned 
-                    ? "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600" 
-                    : "bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
-                } text-white`}
-                title={pinningId === app.id ? "Loading..." : (app.isPinned ? "Unpin" : "Pin")}
-              >
-                {pinningId === app.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Pin className={`w-4 h-4 ${app.isPinned ? 'fill-current' : ''}`} />
+              
+              <div className="flex flex-wrap items-center gap-2 justify-center">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePin(app);
+                  }}
+                  disabled={pinningId === app.id}
+                  className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    pinningId === app.id
+                      ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                      : app.isPinned 
+                      ? "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600" 
+                      : "bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
+                  } text-white`}
+                  title={pinningId === app.id ? "Loading..." : (app.isPinned ? "Unpin" : "Pin")}
+                >
+                  {pinningId === app.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Pin className={`w-4 h-4 ${app.isPinned ? 'fill-current' : ''}`} />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDuplicate(app);
+                  }}
+                  className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shrink-0"
+                  title="Duplikasi Lamaran"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                {app.locationMapLink && (
+                  <a
+                    href={app.locationMapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shrink-0"
+                    title="Buka di Google Maps"
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </a>
                 )}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDuplicate(app);
-                }}
-                className="p-2 rounded-lg transition-colors bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shrink-0"
-                title="Duplikasi Lamaran"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              {app.locationMapLink && (
-                <a
-                  href={app.locationMapLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-lg transition-colors bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shrink-0"
-                  title="Buka di Google Maps"
+                {app.cvLink && (
+                  <a
+                    href={app.cvLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white shrink-0"
+                    title="Lihat CV"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                {app.jobLink && (
+                  <a
+                    href={app.jobLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shrink-0"
+                    title="Lihat Lowongan"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingApp(app);
+                    setShowForm(true);
+                  }}
+                  className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white shrink-0"
+                  title="Edit Lamaran"
                 >
-                  <MapPin className="w-4 h-4" />
-                </a>
-              )}
-              {app.cvLink && (
-                <a
-                  href={app.cvLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-lg transition-colors bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white shrink-0"
-                  title="Lihat CV"
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingApp(app);
+                  }}
+                  className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink flex-1 flex justify-center"
+                  title="Hapus Lamaran"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-              {app.jobLink && (
-                <a
-                  href={app.jobLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shrink-0"
-                  title="Lihat Lowongan"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingApp(app);
-                  setShowForm(true);
-                }}
-                className="p-2 rounded-lg transition-colors bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white shrink-0"
-                title="Edit Lamaran"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeletingApp(app);
-                }}
-                className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink-0"
-                title="Hapus Lamaran"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
           );
@@ -1850,6 +1864,7 @@ export function ApplicationsList() {
           Tambah Lamaran (Ctrl+N)
         </span>
       </button>
+        </div>
       </div>
     </div>
   );
