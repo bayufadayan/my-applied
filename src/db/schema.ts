@@ -145,6 +145,9 @@ export const jobApplications = pgTable("job_applications", {
   // Pin status
   isPinned: boolean("is_pinned").notNull().default(false),
 
+  // Archive status (excluded from active dashboard/statistics)
+  isArchived: boolean("is_archived").notNull().default(false),
+
   // Timestamps
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),

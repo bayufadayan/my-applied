@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, X, Download, CheckSquare, Square, Copy, Loader2, Pin, Menu, List, CheckCircle, XCircle, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, MapPin, ArrowUpDown, X, Download, CheckSquare, Square, Copy, Loader2, Pin, Menu, List, CheckCircle, XCircle, Calendar, Archive, RotateCcw } from "lucide-react";
 import { ApplicationForm } from "./application-form";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ApplicationDetail } from "./application-detail";
@@ -34,6 +34,7 @@ export interface JobApplication {
   locationMapLink: string | null;
   notes: string | null;
   isPinned: boolean;
+  isArchived?: boolean;
   platform?: Platform | null;
 }
 
@@ -180,9 +181,11 @@ export function ApplicationsList() {
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
+  const [bulkArchiveLoading, setBulkArchiveLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [showOnlyWithDeadline, setShowOnlyWithDeadline] = useState(false);
   const [pinningId, setPinningId] = useState<string | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -217,7 +220,7 @@ export function ApplicationsList() {
 
   async function fetchApplications() {
     try {
-      const res = await fetch(`/api/applications?sortBy=${sortBy}`);
+      const res = await fetch(`/api/applications?sortBy=${sortBy}&includeArchived=true`);
       if (res.ok) {
         const data = await res.json();
         setApplications(data);
@@ -245,24 +248,30 @@ export function ApplicationsList() {
   }
 
   const filteredApps = (() => {
+    if (filter === "archived") {
+      return applications.filter((app) => app.isArchived);
+    }
+
+    const activeApplications = applications.filter((app) => !app.isArchived);
+
     if (filter === "all") {
-      return applications;
+      return activeApplications;
     } else if (filter === "active") {
       // Active = all except unresponded, reject, and none
-      return applications.filter(
+      return activeApplications.filter(
         (app) => !["unresponded", "reject", "none"].includes(app.status)
       );
     } else if (filter === "non-active") {
       // Non-Active = only unresponded and reject
-      return applications.filter((app) =>
+      return activeApplications.filter((app) =>
         ["unresponded", "reject"].includes(app.status)
       );
     } else if (filter === "planned") {
       // Planned = only none
-      return applications.filter((app) => app.status === "none");
+      return activeApplications.filter((app) => app.status === "none");
     } else {
       // Individual status filter
-      return applications.filter((app) => app.status === filter);
+      return activeApplications.filter((app) => app.status === filter);
     }
   })();
 
@@ -314,13 +323,13 @@ export function ApplicationsList() {
   // Get available years from applications
   const availableYears = Array.from(
     new Set(
-      applications.map((app) => new Date(app.appliedDate).getFullYear())
+      filteredApps.map((app) => new Date(app.appliedDate).getFullYear())
     )
   ).sort((a, b) => b - a); // Descending order
 
   // Export to CSV function
   function exportToCSV() {
-    if (applications.length === 0) {
+    if (filteredApps.length === 0) {
       alert("Tidak ada data untuk di-export");
       return;
     }
@@ -354,7 +363,7 @@ export function ApplicationsList() {
     ];
 
     // Convert applications to CSV rows
-    const rows = applications.map((app, index) => {
+    const rows = filteredApps.map((app, index) => {
       const appliedDate = new Date(app.appliedDate);
       const formattedDate = `${appliedDate.getDate()}/${appliedDate.getMonth() + 1}/${appliedDate.getFullYear()}`;
       
@@ -474,6 +483,32 @@ export function ApplicationsList() {
     }
   }
 
+  async function handleBulkArchive() {
+    if (selectedIds.length === 0) return;
+
+    setBulkArchiveLoading(true);
+    try {
+      await Promise.all(
+        selectedIds.map((id) =>
+          fetch(`/api/applications/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isArchived: true }),
+          })
+        )
+      );
+
+      await fetchApplications();
+      setSelectedIds([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      console.error("Error bulk archiving:", error);
+      alert("Gagal mengarsipkan beberapa lamaran");
+    } finally {
+      setBulkArchiveLoading(false);
+    }
+  }
+
   function handleDuplicate(app: JobApplication) {
     // Create a copy without the ID (so it creates new record)
     const duplicatedApp = {
@@ -514,6 +549,54 @@ export function ApplicationsList() {
     }
   }
 
+  async function handleArchive(app: JobApplication) {
+    setArchivingId(app.id);
+    try {
+      const res = await fetch(`/api/applications/${app.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isArchived: true,
+        }),
+      });
+
+      if (res.ok) {
+        setApplications((prev) => prev.map((a) => (a.id === app.id ? { ...a, isArchived: true } : a)));
+      }
+    } catch (error) {
+      console.error("Error archiving application:", error);
+      alert("Gagal mengarsipkan lamaran");
+    } finally {
+      setArchivingId(null);
+    }
+  }
+
+  async function handleUnarchive(app: JobApplication) {
+    setArchivingId(app.id);
+    try {
+      const res = await fetch(`/api/applications/${app.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isArchived: false,
+        }),
+      });
+
+      if (res.ok) {
+        setApplications((prev) => prev.map((a) => (a.id === app.id ? { ...a, isArchived: false } : a)));
+      }
+    } catch (error) {
+      console.error("Error unarchiving application:", error);
+      alert("Gagal mengembalikan lamaran dari arsip");
+    } finally {
+      setArchivingId(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -524,23 +607,24 @@ export function ApplicationsList() {
 
   // Calculate counts for each filter category
   const counts = {
-    all: applications.length,
-    active: applications.filter(
+    all: applications.filter((app) => !app.isArchived).length,
+    active: applications.filter((app) => !app.isArchived).filter(
       (app) => !["unresponded", "reject", "none"].includes(app.status)
     ).length,
-    nonActive: applications.filter((app) =>
+    nonActive: applications.filter((app) => !app.isArchived).filter((app) =>
       ["unresponded", "reject"].includes(app.status)
     ).length,
-    planned: applications.filter((app) => app.status === "none").length,
-    applied: applications.filter((app) => app.status === "applied").length,
-    interview: applications.filter((app) => app.status === "interview").length,
-    test: applications.filter((app) => app.status === "test").length,
-    offer: applications.filter((app) => app.status === "offer").length,
-    reject: applications.filter((app) => app.status === "reject").length,
-    unresponded: applications.filter((app) => app.status === "unresponded")
+    planned: applications.filter((app) => !app.isArchived && app.status === "none").length,
+    applied: applications.filter((app) => !app.isArchived && app.status === "applied").length,
+    interview: applications.filter((app) => !app.isArchived && app.status === "interview").length,
+    test: applications.filter((app) => !app.isArchived && app.status === "test").length,
+    offer: applications.filter((app) => !app.isArchived && app.status === "offer").length,
+    reject: applications.filter((app) => !app.isArchived && app.status === "reject").length,
+    unresponded: applications.filter((app) => !app.isArchived && app.status === "unresponded")
       .length,
-    closed: applications.filter((app) => app.status === "closed").length,
-    none: applications.filter((app) => app.status === "none").length,
+    closed: applications.filter((app) => !app.isArchived && app.status === "closed").length,
+    none: applications.filter((app) => !app.isArchived && app.status === "none").length,
+    archived: applications.filter((app) => app.isArchived).length,
   };
 
   return (
@@ -676,6 +760,32 @@ export function ApplicationsList() {
                 }`}
               >
                 {counts.planned}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setFilter("archived");
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
+                filter === "archived"
+                  ? "bg-amber-600 text-white dark:bg-amber-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Archive className="w-3.5 h-3.5" />
+                Arsip
+              </span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  filter === "archived"
+                    ? "bg-white/20"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                {counts.archived}
               </span>
             </button>
           </div>
@@ -888,7 +998,7 @@ export function ApplicationsList() {
       <div className="flex-1 overflow-y-auto lg:ml-64">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Dashboard Statistics */}
-      <DashboardStats applications={applications} />
+      <DashboardStats applications={applications.filter((app) => !app.isArchived)} />
 
       {/* Bulk Actions Toolbar */}
       {selectedIds.length > 0 && (
@@ -965,6 +1075,19 @@ export function ApplicationsList() {
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={handleBulkArchive}
+                disabled={bulkArchiveLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bulkArchiveLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Archive className="w-4 h-4" />
+                )}
+                {bulkArchiveLoading ? "Mengarsipkan..." : "Arsipkan Terpilih"}
+              </button>
 
               {/* Bulk Delete */}
               <button
@@ -1115,9 +1238,9 @@ export function ApplicationsList() {
           </div>
           <button
             onClick={exportToCSV}
-            disabled={applications.length === 0 || exportLoading}
+            disabled={filteredApps.length === 0 || exportLoading}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Export semua data ke CSV"
+            title={filter === "archived" ? "Export data arsip ke CSV" : "Export data aktif ke CSV"}
           >
             {exportLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1213,7 +1336,7 @@ export function ApplicationsList() {
 
               <div className="flex items-start justify-between mb-4 gap-2 min-w-0">
                 <div className="flex-1 min-w-0">
-                  <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
+                    <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
                     app.status === "applied" || app.status === "offer"
                       ? "text-white" 
                       : "text-gray-900 dark:text-white"
@@ -1461,6 +1584,39 @@ export function ApplicationsList() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (app.isArchived) {
+                      handleUnarchive(app);
+                    } else {
+                      handleArchive(app);
+                    }
+                  }}
+                  disabled={archivingId === app.id}
+                  className={`p-2 rounded-lg transition-colors text-white shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    app.isArchived
+                      ? "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                      : "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+                  }`}
+                  title={
+                    archivingId === app.id
+                      ? app.isArchived
+                        ? "Mengembalikan..."
+                        : "Mengarsipkan..."
+                      : app.isArchived
+                      ? "Kembalikan dari Arsip"
+                      : "Arsipkan Lamaran"
+                  }
+                >
+                  {archivingId === app.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : app.isArchived ? (
+                    <RotateCcw className="w-4 h-4" />
+                  ) : (
+                    <Archive className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setDeletingApp(app);
                   }}
                   className="p-2 rounded-lg transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shrink flex-1 flex justify-center"
@@ -1690,7 +1846,7 @@ export function ApplicationsList() {
                       : app.status === "offer"
                       ? "text-green-50"
                       : "text-gray-700 dark:text-gray-300"
-                  }`} title={app.notes}>
+                  }`} title={app.notes ?? undefined}>
                     {app.notes}
                   </p>
                 </div>
@@ -1749,7 +1905,7 @@ export function ApplicationsList() {
                 </button>
                 {app.locationMapLink && (
                   <a
-                    href={app.locationMapLink}
+                    href={app.locationMapLink ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -1761,7 +1917,7 @@ export function ApplicationsList() {
                 )}
                 {app.cvLink && (
                   <a
-                    href={app.cvLink}
+                    href={app.cvLink ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -1773,7 +1929,7 @@ export function ApplicationsList() {
                 )}
                 {app.jobLink && (
                   <a
-                    href={app.jobLink}
+                    href={app.jobLink ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -1793,6 +1949,39 @@ export function ApplicationsList() {
                   title="Edit Lamaran"
                 >
                   <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (app.isArchived) {
+                      handleUnarchive(app);
+                    } else {
+                      handleArchive(app);
+                    }
+                  }}
+                  disabled={archivingId === app.id}
+                  className={`p-2 rounded-lg transition-colors text-white shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    app.isArchived
+                      ? "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                      : "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+                  }`}
+                  title={
+                    archivingId === app.id
+                      ? app.isArchived
+                        ? "Mengembalikan..."
+                        : "Mengarsipkan..."
+                      : app.isArchived
+                      ? "Kembalikan dari Arsip"
+                      : "Arsipkan Lamaran"
+                  }
+                >
+                  {archivingId === app.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : app.isArchived ? (
+                    <RotateCcw className="w-4 h-4" />
+                  ) : (
+                    <Archive className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={(e) => {

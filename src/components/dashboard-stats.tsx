@@ -65,7 +65,7 @@ const statusConfig = {
 };
 
 export function DashboardStats({ applications }: DashboardStatsProps) {
-    const [isStatusCollapsed, setIsStatusCollapsed] = useState(false);
+    const [isStatusCollapsed, setIsStatusCollapsed] = useState(true);
     const total = applications.length;
 
     // Count by status

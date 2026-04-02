@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { jobApplications } from "@/db/schema";
 import { NextResponse } from "next/server";
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc, asc, and } from "drizzle-orm";
 
 // GET all job applications for current user
 export async function GET(request: Request) {
@@ -15,6 +15,13 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const sortBy = searchParams.get("sortBy") || "newest";
+    const includeArchived = searchParams.get("includeArchived") === "true";
+    const whereClause = includeArchived
+      ? eq(jobApplications.userId, session.user.id)
+      : and(
+          eq(jobApplications.userId, session.user.id),
+          eq(jobApplications.isArchived, false)
+        );
 
     let orderBy;
     let applications;
@@ -57,7 +64,7 @@ export async function GET(request: Request) {
       case "status-low":
         // For status sorting, we'll fetch all and sort in memory
         const allApps = await db.query.jobApplications.findMany({
-          where: eq(jobApplications.userId, session.user.id),
+          where: whereClause,
           with: {
             platform: true,
           },
@@ -86,7 +93,7 @@ export async function GET(request: Request) {
     // If not status sorting, fetch normally with orderBy
     if (!applications) {
       applications = await db.query.jobApplications.findMany({
-        where: eq(jobApplications.userId, session.user.id),
+        where: whereClause,
         with: {
           platform: true,
         },

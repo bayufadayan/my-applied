@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { jobApplications } from "@/db/schema";
-import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, or } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Maximum execution time for the function
@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       .from(jobApplications)
       .where(
         and(
+          eq(jobApplications.isArchived, false),
           or(
             eq(jobApplications.status, "none"),
             eq(jobApplications.status, "applied"),
