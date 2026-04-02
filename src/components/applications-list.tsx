@@ -431,6 +431,17 @@ export function ApplicationsList() {
     }
   }
 
+  async function runBulkWithConcurrency(
+    ids: string[],
+    worker: (id: string) => Promise<Response>,
+    concurrency = 4
+  ) {
+    for (let i = 0; i < ids.length; i += concurrency) {
+      const chunk = ids.slice(i, i + concurrency);
+      await Promise.all(chunk.map(worker));
+    }
+  }
+
   async function handleBulkDelete() {
     if (selectedIds.length === 0) return;
     
@@ -439,10 +450,8 @@ export function ApplicationsList() {
 
     setBulkDeleteLoading(true);
     try {
-      await Promise.all(
-        selectedIds.map(id => 
-          fetch(`/api/applications/${id}`, { method: "DELETE" })
-        )
+      await runBulkWithConcurrency(selectedIds, (id) =>
+        fetch(`/api/applications/${id}`, { method: "DELETE" })
       );
       
       setApplications(applications.filter(app => !selectedIds.includes(app.id)));
@@ -461,14 +470,12 @@ export function ApplicationsList() {
 
     setBulkStatusLoading(true);
     try {
-      await Promise.all(
-        selectedIds.map(id => 
-          fetch(`/api/applications/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: newStatus }),
-          })
-        )
+      await runBulkWithConcurrency(selectedIds, (id) =>
+        fetch(`/api/applications/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        })
       );
       
       // Refresh data
@@ -488,14 +495,12 @@ export function ApplicationsList() {
 
     setBulkArchiveLoading(true);
     try {
-      await Promise.all(
-        selectedIds.map((id) =>
-          fetch(`/api/applications/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isArchived: true }),
-          })
-        )
+      await runBulkWithConcurrency(selectedIds, (id) =>
+        fetch(`/api/applications/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isArchived: true }),
+        })
       );
 
       await fetchApplications();
