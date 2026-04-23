@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, Calendar, Building2, Briefcase, DollarSign, MapPin, 
-  User, FileText, StickyNote, ExternalLink, Edit, Trash2, Clock,
-  CheckCircle2, AlertCircle, XCircle, Circle, Target, TrendingUp, Loader2
+  User, FileText, StickyNote, ExternalLink, Edit, Trash2, Clock, CheckCircle2, AlertCircle, XCircle, Circle, Loader2
 } from "lucide-react";
+import { StageProgress } from "@/components/stage-progress";
 
 interface Platform {
   id: string;
@@ -116,14 +116,6 @@ const stageLabels: Record<string, string> = {
   none: "None",
 };
 
-function formatSalary(amount: number): string {
-  if (amount >= 1000000) {
-    return `Rp ${(amount / 1000000).toFixed(1)} jt`;
-  } else if (amount >= 1000) {
-    return `Rp ${(amount / 1000).toFixed(0)} rb`;
-  }
-  return `Rp ${amount}`;
-}
 
 function formatDate(date: Date): string {
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -369,22 +361,15 @@ export default function ApplicationDetailPage() {
             })()}
 
             {/* Current Stage */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Tahap Saat Ini
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {stageLabels[application.currentStage] || application.currentStage}
-                  </p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
+            <StageProgress
+              applicationId={application.id}
+              currentStage={application.currentStage}
+              onUpdated={(updatedApplication) => {
+                setApplication((prev) =>
+                  prev ? { ...prev, ...updatedApplication } : prev
+                );
+              }}
+            />
 
             {/* Job Description */}
             {application.jobDescription && (

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, ExternalLink, Calendar, Building2, Briefcase, DollarSign, MapPin, User, FileText, StickyNote, Eye } from "lucide-react";
+import { StageProgress } from "./stage-progress";
 
 interface Platform {
   id: string;
@@ -35,6 +36,7 @@ interface JobApplication {
 interface ApplicationDetailProps {
   application: JobApplication;
   onClose: () => void;
+  onUpdated?: (application: JobApplication) => void;
 }
 
 const statusColors = {
@@ -57,16 +59,6 @@ const statusLabels = {
   closed: "Closed",
   none: "None",
   unresponded: "Unresponded",
-};
-
-const stageLabels = {
-  screening: "Screening",
-  interview_hr: "Interview HR",
-  interview_user: "Interview User",
-  interview_technical: "Interview Technical",
-  offering: "Offering",
-  negotiation: "Negotiation",
-  none: "None",
 };
 
 function formatSalary(amount: number): string {
@@ -96,7 +88,7 @@ function formatDate(date: Date): string {
   return `${dayName}, ${day} ${month} ${year}`;
 }
 
-export function ApplicationDetail({ application, onClose }: ApplicationDetailProps) {
+export function ApplicationDetail({ application, onClose, onUpdated }: ApplicationDetailProps) {
   const router = useRouter();
 
   // Prevent body scroll when modal is open
@@ -130,7 +122,7 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Status & Stage */}
+          {/* Status */}
           <div className="flex flex-wrap gap-2">
             <span
               className={`px-3 py-1.5 rounded-full text-sm font-medium ${
@@ -139,10 +131,19 @@ export function ApplicationDetail({ application, onClose }: ApplicationDetailPro
             >
               Status: {statusLabels[application.status as keyof typeof statusLabels]}
             </span>
-            <span className="px-3 py-1.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-              Stage: {stageLabels[application.currentStage as keyof typeof stageLabels]}
-            </span>
           </div>
+
+          <StageProgress
+            applicationId={application.id}
+            currentStage={application.currentStage}
+            editable
+            onUpdated={(updatedApplication) => {
+              onUpdated?.({
+                ...application,
+                currentStage: updatedApplication.currentStage,
+              });
+            }}
+          />
 
           {/* Main Info Grid */}
           <div className="grid md:grid-cols-2 gap-4">

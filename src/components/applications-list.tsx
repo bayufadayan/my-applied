@@ -2122,6 +2122,12 @@ export function ApplicationsList() {
         <ApplicationDetail
           application={viewingApp}
           onClose={() => setViewingApp(null)}
+          onUpdated={(updatedApplication) => {
+            setViewingApp(updatedApplication);
+            setApplications((prev) =>
+              prev.map((app) => (app.id === updatedApplication.id ? updatedApplication : app))
+            );
+          }}
         />
       )}
 
