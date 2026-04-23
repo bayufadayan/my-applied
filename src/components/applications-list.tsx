@@ -60,6 +60,77 @@ const statusLabels = {
   unresponded: "Unresponded",
 };
 
+const stageLabels: Record<string, string> = {
+  cv_screening: "CV Screening",
+  hr_interview: "HR Interview",
+  user_interview: "User Interview",
+  technical_test: "Technical Test",
+  psikotes: "Psikotes",
+  final_interview: "Final Interview",
+  offering: "Offering",
+  rejected: "Rejected",
+  accepted: "Accepted",
+  none: "Belum Ada",
+};
+
+const gradientThemeByStatus = {
+  interview: {
+    text: "text-purple-50",
+    border: "border-purple-300/40",
+  },
+  test: {
+    text: "text-orange-50",
+    border: "border-orange-300/40",
+  },
+  offer: {
+    text: "text-green-50",
+    border: "border-green-300/40",
+  },
+} as const;
+
+function isGradientStatus(status: string) {
+  return status === "interview" || status === "test" || status === "offer";
+}
+
+function getGradientTheme(status: string) {
+  if (status === "interview") return gradientThemeByStatus.interview;
+  if (status === "test") return gradientThemeByStatus.test;
+  return gradientThemeByStatus.offer;
+}
+
+function getStageLabel(stage: string) {
+  return stageLabels[stage] || stage.replace(/_/g, " ");
+}
+
+function getApplicationCardClass(status: string) {
+  if (status === "applied") {
+    return "relative flex flex-col bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
+  }
+  if (status === "interview") {
+    return "relative flex flex-col bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 border-2 border-purple-300 dark:border-purple-700 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+  }
+  if (status === "test") {
+    return "relative flex flex-col bg-gradient-to-br from-orange-400 via-orange-500 to-amber-500 border-2 border-orange-300 dark:border-orange-700 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+  }
+  if (status === "offer") {
+    return "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
+  }
+  if (status === "none") {
+    return "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
+  }
+  if (status === "reject") {
+    return "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
+  }
+  if (status === "unresponded") {
+    return "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
+  }
+  if (status === "closed") {
+    return "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-5 hover:shadow-lg transition-shadow opacity-60";
+  }
+
+  return "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-5 hover:shadow-lg transition-shadow";
+}
+
 const sortOptions = [
   { value: "newest", label: "Terbaru" },
   { value: "oldest", label: "Terlama" },
@@ -71,6 +142,19 @@ const sortOptions = [
   { value: "position-za", label: "Posisi Z-A" },
   { value: "salary-high", label: "Gaji Tertinggi" },
   { value: "salary-low", label: "Gaji Terendah" },
+];
+
+const stageFilterOptions = [
+  { value: "cv_screening", label: "CV Screening" },
+  { value: "hr_interview", label: "HR Interview" },
+  { value: "user_interview", label: "User Interview" },
+  { value: "technical_test", label: "Technical Test" },
+  { value: "psikotes", label: "Psikotes" },
+  { value: "final_interview", label: "Final Interview" },
+  { value: "offering", label: "Offering" },
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
+  { value: "none", label: "Belum Ada" },
 ];
 
 function formatSalary(amount: number): string {
@@ -269,6 +353,9 @@ export function ApplicationsList() {
     } else if (filter === "planned") {
       // Planned = only none
       return activeApplications.filter((app) => app.status === "none");
+    } else if (filter.startsWith("stage:")) {
+      const stageValue = filter.slice(6);
+      return activeApplications.filter((app) => app.currentStage === stageValue);
     } else {
       // Individual status filter
       return activeApplications.filter((app) => app.status === filter);
@@ -632,6 +719,14 @@ export function ApplicationsList() {
     archived: applications.filter((app) => app.isArchived).length,
   };
 
+  const stageCounts = applications
+    .filter((app) => !app.isArchived)
+    .reduce<Record<string, number>>((acc, app) => {
+      const key = app.currentStage || "none";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
@@ -988,6 +1083,47 @@ export function ApplicationsList() {
               </span>
             </button>
           </div>
+
+          {/* Divider */}
+          <div className="my-3 border-t-2 border-gray-300 dark:border-gray-600"></div>
+
+          {/* Stage Filters */}
+          <div className="space-y-1 pb-4">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-1.5">
+              By Tahap Terakhir
+            </p>
+
+            {stageFilterOptions.map((stage) => {
+              const stageFilterValue = `stage:${stage.value}`;
+              const isActive = filter === stageFilterValue;
+
+              return (
+                <button
+                  key={stage.value}
+                  onClick={() => {
+                    setFilter(stageFilterValue);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
+                    isActive
+                      ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  <span className="text-sm font-medium">{stage.label}</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      isActive
+                        ? "bg-white/20"
+                        : "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200"
+                    }`}
+                  >
+                    {stageCounts[stage.value] || 0}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -1283,22 +1419,10 @@ export function ApplicationsList() {
             <>
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
                 {finalFilteredApps.filter(app => app.isPinned).map((app) => {
-                  // Different card styles based on status
-                  let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-5 hover:shadow-lg transition-shadow";
-                  
-                  if (app.status === "applied") {
-                    cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-                  } else if (app.status === "offer") {
-                    cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-                  } else if (app.status === "none") {
-                    cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                  } else if (app.status === "reject") {
-                    cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                  } else if (app.status === "unresponded") {
-                    cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                  } else if (app.status === "closed") {
-                    cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-5 hover:shadow-lg transition-shadow opacity-60";
-                  }
+                  const cardClassName = getApplicationCardClass(app.status);
+                  const isGradientCard = isGradientStatus(app.status);
+                  const gradientTheme = getGradientTheme(app.status);
+                  const shouldHighlightFinalStage = ["unresponded", "reject"].includes(app.status);
 
                   return (
                   <div
@@ -1314,25 +1438,21 @@ export function ApplicationsList() {
                     toggleSelect(app.id);
                   }}
                   className={`p-1 rounded transition-colors ${
-                    app.status === "applied" || app.status === "offer"
+                    isGradientCard
                       ? "hover:bg-white/20"
                       : "hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                 >
                   {selectedIds.includes(app.id) ? (
                     <CheckSquare className={`w-5 h-5 ${
-                      app.status === "applied"
-                        ? "text-white"
-                        : app.status === "offer"
+                      isGradientCard
                         ? "text-white"
                         : "text-blue-600 dark:text-blue-400"
                     }`} />
                   ) : (
                     <Square className={`w-5 h-5 ${
-                      app.status === "applied"
-                        ? "text-blue-100"
-                        : app.status === "offer"
-                        ? "text-green-100"
+                      isGradientCard
+                        ? "text-white/80"
                         : "text-gray-400"
                     }`} />
                   )}
@@ -1342,17 +1462,15 @@ export function ApplicationsList() {
               <div className="flex items-start justify-between mb-4 gap-2 min-w-0">
                 <div className="flex-1 min-w-0">
                     <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
-                    app.status === "applied" || app.status === "offer"
+                    isGradientCard
                       ? "text-white" 
                       : "text-gray-900 dark:text-white"
                   }`}>
                     {app.position}
                   </h3>
                   <p className={`text-sm wrap-break-word ${
-                    app.status === "applied"
-                      ? "text-blue-50"
-                      : app.status === "offer"
-                      ? "text-green-50"
+                    isGradientCard
+                      ? gradientTheme.text
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
                     {app.companyName || "Perusahaan tidak disebutkan"}
@@ -1360,7 +1478,7 @@ export function ApplicationsList() {
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${
-                    app.status === "applied" || app.status === "offer"
+                    isGradientCard
                       ? "bg-white/20 text-white backdrop-blur-sm"
                       : statusColors[app.status as keyof typeof statusColors]
                   }`}
@@ -1371,13 +1489,22 @@ export function ApplicationsList() {
 
               <div className="space-y-2 text-sm mb-4 min-w-0">
                 <div className={`flex items-center gap-2 ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   <span className="wrap-break-word">{formatDate(app.appliedDate)}</span>
+                </div>
+
+                <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border ${
+                  isGradientCard
+                    ? "bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    : shouldHighlightFinalStage
+                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100"
+                    : "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200"
+                }`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide">Tahap Terakhir</span>
+                  <span className="text-sm font-bold">{getStageLabel(app.currentStage)}</span>
                 </div>
                 
                 {/* Deadline Display */}
@@ -1388,7 +1515,7 @@ export function ApplicationsList() {
                       deadlineInfo.urgent ? 'animate-pulse' : ''
                     }`}>
                       <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${
-                        app.status === "applied" || app.status === "offer"
+                        isGradientCard
                           ? "bg-white/10 backdrop-blur-sm border-white/30 text-white font-semibold"
                           : `${deadlineInfo.bgColor} ${deadlineInfo.borderColor} ${deadlineInfo.color} font-semibold`
                       }`}>
@@ -1403,10 +1530,8 @@ export function ApplicationsList() {
                 
                 {app.platform && (
                   <div className={`flex items-center gap-2 min-w-0 ${
-                    app.status === "applied"
-                      ? "text-blue-50"
-                      : app.status === "offer"
-                      ? "text-green-50"
+                    isGradientCard
+                      ? gradientTheme.text
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
                     <span className="shrink-0">🌐</span>
@@ -1414,10 +1539,8 @@ export function ApplicationsList() {
                   </div>
                 )}
                 <div className={`flex items-center gap-2 flex-wrap ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   <span className="shrink-0">💼</span>
@@ -1429,10 +1552,8 @@ export function ApplicationsList() {
                 </div>
                 {(app.salaryMin || app.salaryMax) && (
                   <div className={`flex items-center gap-2 flex-wrap ${
-                    app.status === "applied"
-                      ? "text-blue-50"
-                      : app.status === "offer"
-                      ? "text-green-50"
+                    isGradientCard
+                      ? gradientTheme.text
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
                     <span className="shrink-0">💰</span>
@@ -1447,10 +1568,8 @@ export function ApplicationsList() {
                 )}
                 {app.location && (
                   <div className={`flex items-center gap-2 min-w-0 ${
-                    app.status === "applied"
-                      ? "text-blue-50"
-                      : app.status === "offer"
-                      ? "text-green-50"
+                    isGradientCard
+                      ? gradientTheme.text
                       : "text-gray-600 dark:text-gray-400"
                   }`}>
                     <MapPin className="w-4 h-4 shrink-0" />
@@ -1462,23 +1581,19 @@ export function ApplicationsList() {
               {/* Notes Section */}
               {app.notes && (
                 <div className={`mt-3 px-3 py-2 rounded-lg ${
-                  app.status === "applied"
-                    ? "bg-blue-500/20 border border-blue-400/30"
-                    : app.status === "offer"
-                    ? "bg-green-500/20 border border-green-400/30"
+                  isGradientCard
+                    ? "bg-white/10 border border-white/25"
                     : "bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
                 }`}>
                   <div className="flex items-start gap-2">
                     <span className={`text-sm mt-0.5 ${
-                      app.status === "applied" || app.status === "offer"
+                      isGradientCard
                         ? "text-white/80"
                         : "text-gray-500 dark:text-gray-400"
                     }`}>📝</span>
                     <p className={`text-sm flex-1 truncate ${
-                      app.status === "applied"
-                        ? "text-blue-50"
-                        : app.status === "offer"
-                        ? "text-green-50"
+                      isGradientCard
+                        ? gradientTheme.text
                         : "text-gray-700 dark:text-gray-300"
                     }`} title={app.notes}>
                       {app.notes}
@@ -1488,10 +1603,8 @@ export function ApplicationsList() {
               )}
 
               <div className={`space-y-2 pt-4 mt-auto border-t ${
-                app.status === "applied"
-                  ? "border-blue-400/30"
-                  : app.status === "offer"
-                  ? "border-green-400/30"
+                isGradientCard
+                  ? gradientTheme.border
                   : "border-gray-200 dark:border-gray-700"
               }`}>
                 {/* Detail Button - Full Width */}
@@ -1654,22 +1767,10 @@ export function ApplicationsList() {
           {finalFilteredApps.some(app => !app.isPinned) && (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
               {finalFilteredApps.filter(app => !app.isPinned).map((app) => {
-                // Different card styles based on status
-                let cardClassName = "relative flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-5 hover:shadow-lg transition-shadow";
-                
-                if (app.status === "applied") {
-                  cardClassName = "relative flex flex-col bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-2 border-blue-400 dark:border-blue-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-                } else if (app.status === "offer") {
-                  cardClassName = "relative flex flex-col bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 border-2 border-green-400 dark:border-green-600 rounded-lg p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]";
-                } else if (app.status === "none") {
-                  cardClassName = "relative flex flex-col bg-gray-50 dark:bg-gray-900/30 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                } else if (app.status === "reject") {
-                  cardClassName = "relative flex flex-col bg-red-50 dark:bg-red-900/10 border-2 border-red-300 dark:border-red-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                } else if (app.status === "unresponded") {
-                  cardClassName = "relative flex flex-col bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-300 dark:border-orange-800 rounded-lg p-5 hover:shadow-lg transition-shadow";
-                } else if (app.status === "closed") {
-                  cardClassName = "relative flex flex-col bg-gray-200 dark:bg-gray-700/70 border-2 border-gray-400 dark:border-gray-600 rounded-lg p-5 hover:shadow-lg transition-shadow opacity-60";
-                }
+                const cardClassName = getApplicationCardClass(app.status);
+                const isGradientCard = isGradientStatus(app.status);
+                const gradientTheme = getGradientTheme(app.status);
+                const shouldHighlightFinalStage = ["unresponded", "reject"].includes(app.status);
 
                 return (
                 <div
@@ -1685,25 +1786,21 @@ export function ApplicationsList() {
                   toggleSelect(app.id);
                 }}
                 className={`p-1 rounded transition-colors ${
-                  app.status === "applied" || app.status === "offer"
+                  isGradientCard
                     ? "hover:bg-white/20"
                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 {selectedIds.includes(app.id) ? (
                   <CheckSquare className={`w-5 h-5 ${
-                    app.status === "applied"
-                      ? "text-white"
-                      : app.status === "offer"
+                    isGradientCard
                       ? "text-white"
                       : "text-blue-600 dark:text-blue-400"
                   }`} />
                 ) : (
                   <Square className={`w-5 h-5 ${
-                    app.status === "applied"
-                      ? "text-blue-100"
-                      : app.status === "offer"
-                      ? "text-green-100"
+                    isGradientCard
+                      ? "text-white/80"
                       : "text-gray-400"
                   }`} />
                 )}
@@ -1713,17 +1810,15 @@ export function ApplicationsList() {
             <div className="flex items-start justify-between mb-4 gap-2 min-w-0">
               <div className="flex-1 min-w-0">
                 <h3 className={`font-semibold text-lg mb-1 wrap-break-word ${
-                  app.status === "applied" || app.status === "offer"
+                  isGradientCard
                     ? "text-white" 
                     : "text-gray-900 dark:text-white"
                 }`}>
                   {app.position}
                 </h3>
                 <p className={`text-sm wrap-break-word ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   {app.companyName || "Perusahaan tidak disebutkan"}
@@ -1731,7 +1826,7 @@ export function ApplicationsList() {
               </div>
               <span
                 className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${
-                  app.status === "applied" || app.status === "offer"
+                  isGradientCard
                     ? "bg-white/20 text-white backdrop-blur-sm"
                     : statusColors[app.status as keyof typeof statusColors]
                 }`}
@@ -1742,13 +1837,22 @@ export function ApplicationsList() {
 
             <div className="space-y-2 text-sm mb-4 min-w-0">
               <div className={`flex items-center gap-2 ${
-                app.status === "applied"
-                  ? "text-blue-50"
-                  : app.status === "offer"
-                  ? "text-green-50"
+                isGradientCard
+                  ? gradientTheme.text
                   : "text-gray-600 dark:text-gray-400"
               }`}>
                 <span className="wrap-break-word">{formatDate(app.appliedDate)}</span>
+              </div>
+
+              <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border ${
+                isGradientCard
+                  ? "bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                  : shouldHighlightFinalStage
+                  ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100"
+                  : "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200"
+              }`}>
+                <span className="text-xs font-semibold uppercase tracking-wide">Tahap Terakhir</span>
+                <span className="text-sm font-bold">{getStageLabel(app.currentStage)}</span>
               </div>
               
               {/* Deadline Display */}
@@ -1759,7 +1863,7 @@ export function ApplicationsList() {
                     deadlineInfo.urgent ? 'animate-pulse' : ''
                   }`}>
                     <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${
-                      app.status === "applied" || app.status === "offer"
+                      isGradientCard
                         ? "bg-white/10 backdrop-blur-sm border-white/30 text-white font-semibold"
                         : `${deadlineInfo.bgColor} ${deadlineInfo.borderColor} ${deadlineInfo.color} font-semibold`
                     }`}>
@@ -1774,10 +1878,8 @@ export function ApplicationsList() {
               
               {app.platform && (
                 <div className={`flex items-center gap-2 min-w-0 ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   <span className="shrink-0">🌐</span>
@@ -1785,10 +1887,8 @@ export function ApplicationsList() {
                 </div>
               )}
               <div className={`flex items-center gap-2 flex-wrap ${
-                app.status === "applied"
-                  ? "text-blue-50"
-                  : app.status === "offer"
-                  ? "text-green-50"
+                isGradientCard
+                  ? gradientTheme.text
                   : "text-gray-600 dark:text-gray-400"
               }`}>
                 <span className="shrink-0">💼</span>
@@ -1800,10 +1900,8 @@ export function ApplicationsList() {
               </div>
               {(app.salaryMin || app.salaryMax) && (
                 <div className={`flex items-center gap-2 flex-wrap ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   <span className="shrink-0">💰</span>
@@ -1818,10 +1916,8 @@ export function ApplicationsList() {
               )}
               {app.location && (
                 <div className={`flex items-center gap-2 min-w-0 ${
-                  app.status === "applied"
-                    ? "text-blue-50"
-                    : app.status === "offer"
-                    ? "text-green-50"
+                  isGradientCard
+                    ? gradientTheme.text
                     : "text-gray-600 dark:text-gray-400"
                 }`}>
                   <MapPin className="w-4 h-4 shrink-0" />
@@ -1833,23 +1929,19 @@ export function ApplicationsList() {
             {/* Notes Section */}
             {app.notes && (
               <div className={`mt-3 px-3 py-2 rounded-lg ${
-                app.status === "applied"
-                  ? "bg-blue-500/20 border border-blue-400/30"
-                  : app.status === "offer"
-                  ? "bg-green-500/20 border border-green-400/30"
+                isGradientCard
+                  ? "bg-white/10 border border-white/25"
                   : "bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
               }`}>
                 <div className="flex items-start gap-2">
                   <span className={`text-sm mt-0.5 ${
-                    app.status === "applied" || app.status === "offer"
+                    isGradientCard
                       ? "text-white/80"
                       : "text-gray-500 dark:text-gray-400"
                   }`}>📝</span>
                   <p className={`text-sm flex-1 truncate ${
-                    app.status === "applied"
-                      ? "text-blue-50"
-                      : app.status === "offer"
-                      ? "text-green-50"
+                    isGradientCard
+                      ? gradientTheme.text
                       : "text-gray-700 dark:text-gray-300"
                   }`} title={app.notes ?? undefined}>
                     {app.notes}
@@ -1859,10 +1951,8 @@ export function ApplicationsList() {
             )}
 
             <div className={`space-y-2 pt-4 mt-auto border-t ${
-              app.status === "applied"
-                ? "border-blue-400/30"
-                : app.status === "offer"
-                ? "border-green-400/30"
+              isGradientCard
+                ? gradientTheme.border
                 : "border-gray-200 dark:border-gray-700"
             }`}>
               <button
