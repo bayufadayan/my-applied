@@ -21,6 +21,7 @@ function formatUpdatedAt(value: string | null): string {
 export function CatatEditor() {
   const editorRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasHydratedInitialContentRef = useRef(false);
 
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -40,10 +41,6 @@ export function CatatEditor() {
         const data = await response.json();
         const initialContent = data.content || "";
 
-        if (editorRef.current) {
-          editorRef.current.innerHTML = initialContent || "<p><br></p>";
-        }
-
         setContent(initialContent);
         setLastSavedAt(data.updatedAt);
       } catch (error) {
@@ -57,6 +54,15 @@ export function CatatEditor() {
 
     fetchNote();
   }, []);
+
+  useEffect(() => {
+    if (loading || hasHydratedInitialContentRef.current || !editorRef.current) {
+      return;
+    }
+
+    editorRef.current.innerHTML = content || "<p><br></p>";
+    hasHydratedInitialContentRef.current = true;
+  }, [loading, content]);
 
   const saveNote = useCallback(async (nextContent: string) => {
     setSaving(true);
