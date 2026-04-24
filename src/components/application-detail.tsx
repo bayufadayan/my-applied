@@ -30,6 +30,7 @@ interface JobApplication {
   location: string | null;
   locationMapLink: string | null;
   notes: string | null;
+  isPinned: boolean;
   platform?: Platform | null;
 }
 
