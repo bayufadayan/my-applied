@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard");
+  const isOnCatat = req.nextUrl.pathname.startsWith("/catat");
   const isOnAuth = req.nextUrl.pathname.startsWith("/auth");
 
   // Redirect to dashboard if logged in and on auth page
@@ -12,7 +13,7 @@ export default auth((req) => {
   }
 
   // Redirect to login if not logged in and trying to access dashboard
-  if (!isLoggedIn && isOnDashboard) {
+  if (!isLoggedIn && (isOnDashboard || isOnCatat)) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 

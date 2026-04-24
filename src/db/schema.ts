@@ -101,6 +101,18 @@ export const platforms = pgTable("platforms", {
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+// ==================== USER NOTES ====================
+export const userNotes = pgTable("user_notes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull().default(""),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
 // ==================== JOB APPLICATIONS ====================
 export const jobApplications = pgTable("job_applications", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -165,8 +177,16 @@ export const jobApplicationsRelations = relations(jobApplications, ({ one }) => 
   }),
 }));
 
+export const userNotesRelations = relations(userNotes, ({ one }) => ({
+  user: one(users, {
+    fields: [userNotes.userId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   jobApplications: many(jobApplications),
+  userNotes: many(userNotes),
 }));
 
 export const platformsRelations = relations(platforms, ({ many }) => ({

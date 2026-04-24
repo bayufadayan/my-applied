@@ -1,15 +1,18 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ApplicationsList } from "@/components/applications-list";
-import { HeaderSearch } from "@/components/header-search";
-import Link from "next/link";
+import { CatatEditor } from "@/components/catat-editor";
 
-export default async function DashboardPage() {
+export default async function CatatPage() {
   const session = await auth();
 
+  if (!session) {
+    redirect("/auth/login");
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Header - Fixed */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col mt-8">
       <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-50">
         <div className="px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
@@ -17,23 +20,20 @@ export default async function DashboardPage() {
             <nav className="hidden sm:flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
               <Link
                 href="/dashboard"
-                className="px-3 py-1.5 text-sm font-medium rounded-md bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Dashboard
               </Link>
               <Link
                 href="/catat"
-                className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-3 py-1.5 text-sm font-medium rounded-md bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
               >
                 Catat
               </Link>
             </nav>
-            
-            {/* Search Bar in Header - Always visible */}
-            <div className="flex-1">
-              <HeaderSearch />
-            </div>
-            
+
+            <div className="flex-1" />
+
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <div className="text-right hidden md:block">
@@ -62,10 +62,17 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content - with top padding for fixed header */}
-      <div className="pt-14 flex-1">
-        <ApplicationsList />
-      </div>
+      <main className="pt-16 px-4 sm:px-6 lg:px-8 pb-6 flex-1">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Catatan Bebas</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Satu halaman catatan dengan rich text. Perubahan disimpan otomatis ke database.
+            </p>
+          </div>
+          <CatatEditor />
+        </div>
+      </main>
     </div>
   );
 }
